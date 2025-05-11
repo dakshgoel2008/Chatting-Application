@@ -4,8 +4,8 @@ import ErrorWrapper from "../utils/ErrorWrapper.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 
 export const verifyJWT = ErrorWrapper(async (req, res, next) => {
-    const incomingAccessToken = req.cookies.AccessToken;
-    const incomingRefreshToken = req.cookies.RefreshToken;
+    const incomingAccessToken = req.cookies.accessToken;
+    const incomingRefreshToken = req.cookies.refreshToken;
     if (!incomingAccessToken || !incomingRefreshToken) {
         throw new ErrorHandler(401, "Unauthorized user, Kindly login first, if new user please sign in first");
     }

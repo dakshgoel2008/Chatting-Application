@@ -23,9 +23,9 @@ const userSchema = new Schema(
             trim: true,
             lowercase: true,
         },
-        image: {
+        profileImage: {
             type: String,
-            required: false, // If image is optional
+            required: false,
         },
         password: {
             type: String,
@@ -41,7 +41,8 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", function (next) {
-    if (!this.isModified("password")) return next(); // if the password of the user is changed then only change the password else do nothing
+    if (!this.isModified("password")) return next();
+    // if the password of the user is changed then only change the password else do nothing
     const user = this;
     bcrypt.hash(user.password, 10, (err, hash) => {
         if (err) {

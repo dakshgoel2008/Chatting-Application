@@ -93,3 +93,5 @@ dist
 
 
 .svelte-kit
+
+data/
