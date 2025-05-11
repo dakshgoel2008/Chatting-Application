@@ -94,4 +94,11 @@ dist
 
 .svelte-kit
 
+# for manual purposes of the mongodb
 data/
+
+# Ignore all contents of the uploads folder
+/public/uploads/*
+
+# But keep the folder itself
+!/public/uploads/.gitkeep
