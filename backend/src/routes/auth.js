@@ -12,9 +12,13 @@ router.post("/logout", postLogout);
 
 router.put("/update-profile", verifyJWT, upload.single("profileImage"), putUpdateProfile);
 
-// router.get("/check", (req, res, next) => {
-//     console.log("Hello world");
-//     res.send("Hello world");
-// });
+router.get("/check", async (req, res, next) => {
+    try {
+        res.status(200).json(req.user);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 export default router;

@@ -40,6 +40,13 @@ app.use(
     })
 );
 
+app.use(
+    cors({
+        origin: process.env.CORS_ORIGINS,
+        credentials: true,
+    })
+);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 
