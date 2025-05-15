@@ -12,7 +12,7 @@ router.post("/logout", postLogout);
 
 router.put("/update-profile", verifyJWT, upload.single("profileImage"), putUpdateProfile);
 
-router.get("/check", async (req, res, next) => {
+router.get("/check", verifyJWT, async (req, res, next) => {
     try {
         res.status(200).json(req.user);
     } catch (err) {

@@ -74,7 +74,7 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
     if (!password) {
         throw new ErrorHandler(400, "Password is required");
     }
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ErrorHandler(400, "Either username or email is required");
     }
 

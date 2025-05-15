@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 dotenv.config();
 import helmet from "helmet";
+import cors from "cors";
 // Routes
 import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/message.js";
@@ -15,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 4444;
 
-app.use(express.json({ limit: "4kb" }));
+app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
@@ -40,16 +41,17 @@ app.use(
     })
 );
 
+const corsOrigins = JSON.parse(process.env.CORS_ORIGINS);
+
 app.use(
     cors({
-        origin: process.env.CORS_ORIGINS,
+        origin: corsOrigins,
         credentials: true,
     })
 );
 
 app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
-
 // DB Connection:
 mongoose
     .connect(process.env.DB_PATH)
