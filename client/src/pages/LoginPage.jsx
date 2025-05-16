@@ -19,8 +19,7 @@ const LoginPage = () => {
         e.preventDefault();
 
         const { email, password } = formData;
-
-        if (!email || !password) {
+        if (!email.trim() || !password.trim()) {
             toast.error("Please enter both email and password.");
             return;
         }

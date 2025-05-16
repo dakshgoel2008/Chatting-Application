@@ -4,13 +4,15 @@ import { Eye, EyeOff, Mail, Lock, User, Loader2, MessageSquare } from "lucide-re
 import { Link } from "react-router-dom";
 import AuthImagePattern from "../components/AuthImagePattern"; // TODO: Consider dynamic image support later
 import toast, { Toaster } from "react-hot-toast";
+import axios from "axios";
 
 const SignUpPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        fullName: "",
+        name: "",
         email: "",
         password: "",
+        username: "",
     });
     const { signUp, isSigningUp } = useUserAuthStore();
 
@@ -22,26 +24,52 @@ const SignUpPage = () => {
         }));
     };
 
+    // random user generator -> identity retrieval is easy.
+    const usernameGenerator = (name) => {
+        const randomNum = Math.floor(100 + Math.random() * 900); // 3-digit number
+        const base = name.trim().toLowerCase().replace(/\s+/g, "_");
+        return `${base}_${randomNum}`;
+    };
+
+    // ProfileImage generator:
+    const fetchAvatarFile = async (name) => {
+        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            name
+        )}&background=random&color=fff&size=128`;
+        const res = await axios.get(avatarUrl, { responseType: "blob" });
+        const blob = res.data;
+
+        return new File([blob], "avatar.png", { type: blob.type });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const { name, email, password, username } = formData;
 
-        const { fullName, email, password } = formData;
-
-        if (!fullName || !email || !password) {
+        if (!name.trim() || !email.trim() || !password.trim()) {
             toast.error("Please fill in all fields.");
             return;
         }
 
+        const finalUsername = username || usernameGenerator(name);
+        const avatarFile = await fetchAvatarFile(name);
+        const formDataToSend = new FormData();
+        formDataToSend.append("name", name);
+        formDataToSend.append("email", email);
+        formDataToSend.append("password", password);
+        formDataToSend.append("username", finalUsername);
+        formDataToSend.append("profileImage", avatarFile);
+
         try {
-            await signUp(formData);
+            await signUp(formDataToSend); // signUp must use multipart/form-data
         } catch (err) {
             console.error("Signup error:", err);
-            toast.error("Sign-up error:", err);
+            toast.error("Sign-up failed. Check console for more.");
         }
     };
 
     return (
-        <div className="min-h-screen grid lg:grid-cols-2 bg-base-100">
+        <div className="min-h-screen w-screen grid lg:grid-cols-2 bg-base-100">
             {/* Left: Form Section */}
             <div className="flex flex-col justify-center items-center p-6 sm:p-12">
                 <div className="w-full max-w-md space-y-8">
@@ -60,18 +88,18 @@ const SignUpPage = () => {
                     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                         {/* Full Name */}
                         <div className="form-control">
-                            <label className="label" htmlFor="fullName">
+                            <label className="label" htmlFor="name">
                                 <span className="label-text font-medium">Full Name</span>
                             </label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 size-5" />
                                 <input
-                                    id="fullName"
+                                    id="name"
                                     type="text"
-                                    name="fullName"
+                                    name="name"
                                     className="input input-bordered w-full pl-10"
                                     placeholder="Daksh Goel"
-                                    value={formData.fullName}
+                                    value={formData.name}
                                     onChange={handleInputChange}
                                     autoComplete="name"
                                     required
@@ -127,6 +155,31 @@ const SignUpPage = () => {
                                     {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Username (optional) */}
+                        <div className="form-control">
+                            <label className="label" htmlFor="username">
+                                <span className="label-text font-medium">
+                                    Username <span className="text-base-content/50">(optional)</span>
+                                </span>
+                            </label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 size-5" />
+                                <input
+                                    id="username"
+                                    type="text"
+                                    name="username"
+                                    className="input input-bordered w-full pl-10"
+                                    placeholder="e.g. daksh_goel23"
+                                    value={formData.username}
+                                    onChange={handleInputChange}
+                                    autoComplete="username"
+                                />
+                            </div>
+                            <p className="text-sm text-base-content/50 mt-1">
+                                Leave blank to get an auto-generated username.
+                            </p>
                         </div>
 
                         {/* Submit */}

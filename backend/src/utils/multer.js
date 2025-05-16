@@ -23,23 +23,19 @@ const storage = multer.diskStorage({
 
 // File filter to allow specific MIME types
 const fileFilter = (req, file, cb) => {
-    console.log(`Uploading file with MIME type: ${file.mimetype}`);
-    let allowedTypes = [];
+    console.log(`Uploading file with field name: ${file.fieldname}, MIME type: ${file.mimetype}`);
 
-    if (file.fieldname === "image") {
-        allowedTypes = validFileTypes.image;
-    } else if (file.fieldname === "video") {
-        allowedTypes = validFileTypes.video;
-    } else if (file.fieldname === "audio") {
-        allowedTypes = validFileTypes.audio;
-    } else if (file.fieldname === "file") {
-        allowedTypes = validFileTypes.file;
-    }
+    const allAllowedTypes = [
+        ...validFileTypes.image,
+        ...validFileTypes.video,
+        ...validFileTypes.audio,
+        ...validFileTypes.file,
+    ];
 
-    if (allowedTypes.includes(file.mimetype)) {
-        return cb(null, true); // Accept the file
+    if (allAllowedTypes.includes(file.mimetype)) {
+        return cb(null, true);
     } else {
-        return cb(new Error("Invalid file type"), false); // Reject the file
+        return cb(new Error(`Invalid file type: ${file.mimetype}`), false);
     }
 };
 
