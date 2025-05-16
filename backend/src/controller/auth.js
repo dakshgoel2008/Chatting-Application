@@ -182,8 +182,6 @@ export const putUpdateProfile = ErrorWrapper(async (req, res, next) => {
         throw new ErrorHandler(401, "User not found");
     }
 
-    user.name = name;
-    user.email = email;
     user.username = username;
     user.profileImage = cloudinaryResponse.secure_url;
 
@@ -196,6 +194,8 @@ export const putUpdateProfile = ErrorWrapper(async (req, res, next) => {
             username: user.username,
             email: user.email,
             name: user.name,
+            profileImage: user.profileImage,
+            createdAt: user.createdAt,
         },
         success: true,
     });

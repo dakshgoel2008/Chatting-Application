@@ -13,6 +13,7 @@ const SignUpPage = () => {
         email: "",
         password: "",
         username: "",
+        profileImage: null,
     });
     const { signUp, isSigningUp } = useUserAuthStore();
 
