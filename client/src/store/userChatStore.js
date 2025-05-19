@@ -1,0 +1,50 @@
+import { create } from "zustand";
+import toast from "react-hot-toast";
+import { axiosInstance } from "../lib/axios";
+
+export const useUserChatStore = create((set, get) => ({
+    message: [],
+    users: [],
+    selectedUser: null,
+    isUsersLoading: false,
+    isMessageLoading: false,
+
+    getUsers: async () => {
+        set({ isUsersLoading: true });
+        try {
+            const res = await axiosInstance.get("/message/users");
+            set({ users: res.data.users });
+        } catch (err) {
+            console.error("Get users error:", err);
+            toast.error(err?.response?.data?.message || err?.message || "Get users failed. Please try again.");
+        } finally {
+            set({ isUsersLoading: false });
+        }
+    },
+
+    getMessages: async (userId) => {
+        set({ isMessageLoading: true });
+        try {
+            const res = await axiosInstance.get(`/message/${userId}`);
+            set({ message: Array.isArray(res.data) ? res.data : [] });
+        } catch (err) {
+            console.error("Get messages error:", err);
+            toast.error(err?.response?.data?.message || err?.message || "Get messages failed. Please try again.");
+        } finally {
+            set({ isMessageLoading: false });
+        }
+    },
+
+    sendMessage: async (data) => {
+        const { selectedUser, message } = get();
+        try {
+            const res = await axiosInstance.post(`/message/send/${selectedUser._id}`, data);
+            set({ message: [...(Array.isArray(message) ? message : []), res.data] });
+        } catch (error) {
+            console.error("Send message error:", error);
+            toast.error(error?.response?.data?.message || error?.message || "Send message failed. Please try again.");
+        }
+    },
+
+    setSelectedUser: (user) => set({ selectedUser: user }),
+}));

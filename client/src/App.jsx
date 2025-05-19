@@ -26,8 +26,8 @@ const App = () => {
     }
 
     return (
-        <div data-theme="cupcake">
-            <NavBar />
+        <div>
+            <NavBar />s
             <Routes>
                 <Route path="/" element={user ? <HomePage /> : <Navigate to="/login"></Navigate>} />
                 <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to="/"></Navigate>} />

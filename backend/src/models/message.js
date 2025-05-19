@@ -14,7 +14,7 @@ const messageSchema = new Schema(
         // types of files available to be sent
         text: {
             type: String,
-            required: true,
+            required: false,
             trim: false,
         },
         image: {
