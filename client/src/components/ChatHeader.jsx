@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useUserChatStore } from "../store/userChatStore";
 import { useUserAuthStore } from "../store/userAuthStore";
-import { capitaliseWords } from "../lib/capitalise";
+import { capitaliseWords } from "../lib/utils";
 
 const ChatHeader = () => {
     const { selectedUser, setSelectedUser } = useUserChatStore();

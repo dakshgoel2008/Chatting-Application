@@ -38,7 +38,7 @@ export const getMessages = ErrorWrapper(async (req, res, next) => {
         });
         res.status(201).json({
             message: "Messages fetched successfully",
-            messages: messages, // array of the messages that we wanna see as history.
+            message: messages, // array of the messages that we wanna see as history.
             success: true,
         });
     } catch (error) {
@@ -76,7 +76,6 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
         if (req.files?.file) {
             fileUrl = await uploadOnCloudinary(req.files.file[0].path); // Upload general file
         }
-        console.log(req.files);
         const message = await Message.create({
             senderId,
             receiverId,
@@ -91,7 +90,7 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
 
         res.status(201).json({
             message: "Message sent successfully",
-            message: message, // array of the messages that we wanna see as history.
+            message, // array of the messages that we wanna see as history.
             success: true,
         });
     } catch (error) {

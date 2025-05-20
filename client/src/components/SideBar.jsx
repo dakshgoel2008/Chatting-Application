@@ -3,7 +3,7 @@ import { useUserChatStore } from "./../store/userChatStore";
 import SideBarSkeleton from "./Skeletons/SideBarSkeleton";
 import { Users } from "lucide-react";
 import { useUserAuthStore } from "../store/userAuthStore";
-import { capitaliseWords } from "./../lib/capitalise";
+import { capitaliseWords } from "./../lib/utils";
 const SideBar = () => {
     const { getUsers, selectedUser, setSelectedUser, users, isUsersLoading } = useUserChatStore();
     const { onlineUsers } = useUserAuthStore();
