@@ -45,7 +45,6 @@ const MessageInput = () => {
         const formData = new FormData();
         formData.append("text", text);
         if (file) formData.append("file", file);
-        console.log(formData.messages);
         await sendMessage(formData);
 
         // Reset

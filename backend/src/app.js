@@ -10,8 +10,10 @@ import cors from "cors";
 // Routes
 import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/message.js";
+import { app, server } from "./utils/socket.js";
 
-const app = express();
+// const app = express();       // socket.js {removing duplicacy}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 4444;
@@ -56,7 +58,7 @@ app.use("/api/message", messageRoutes);
 mongoose
     .connect(process.env.DB_PATH)
     .then(() => {
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log(`Connected to DB: http://localhost:${PORT}`);
         });
     })

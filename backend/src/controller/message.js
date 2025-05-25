@@ -3,6 +3,7 @@ import ErrorHandler from "../utils/ErrorHandler.js";
 import ErrorWrapper from "../utils/ErrorWrapper.js";
 import Message from "./../models/message.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
+import { getReceiverSocketId, io } from "./../utils/socket.js";
 
 export const getUsers = ErrorWrapper(async (req, res, next) => {
     try {
@@ -86,7 +87,10 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
             file: fileUrl ? fileUrl.url : null,
         });
 
-        // TODO: Real time functionality to send the message to the receiver.
+        const receiverSocketId = getReceiverSocketId(receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("newMessage", message);
+        }
 
         res.status(201).json({
             message: "Message sent successfully",
