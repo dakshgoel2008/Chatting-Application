@@ -54,6 +54,7 @@ export const useUserChatStore = create((set, get) => ({
         const socket = useUserAuthStore.getState().socket;
 
         socket.on("newMessage", (newMessage) => {
+            if (newMessage.senderId !== selectedUser._id) return;
             set({ message: [...get().message, newMessage] });
         });
     },
