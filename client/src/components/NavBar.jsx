@@ -17,6 +17,7 @@ const NavBar = () => {
                 </Link>
 
                 {/* Right side */}
+
                 <div className="flex items-center gap-3">
                     <Link
                         to="/settings"

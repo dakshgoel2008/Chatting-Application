@@ -23,4 +23,19 @@ const uploadOnCloudinary = async (filePath, resourceType = "auto") => {
     }
 };
 
+export const uploadDefaultGoogleImageOnCloudinary = async (imageUrl) => {
+    try {
+        const res = await cloudinary.uploader.upload(imageUrl, {
+            resource_type: "image",
+            public_id: "default_google_image",
+            overwrite: true,
+        });
+        console.log("Google profile image uploaded:", response.secure_url);
+        return res;
+    } catch (err) {
+        console.error("Error uploading default Google image to Cloudinary", err);
+        return null;
+    }
+};
+
 export default uploadOnCloudinary;

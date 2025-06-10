@@ -10,19 +10,14 @@ const ChatBubble = ({ message, isOwnMessage }) => {
             }`}
         >
             <div className={`p-3 rounded-xl ${bubbleStyle}`}>
-                {/* 📝 Text */}
                 {message.text && <div className="whitespace-pre-line">{message.text}</div>}
 
-                {/* 🖼️ Image */}
                 {message.image && <img src={message.image} alt="Sent Image" className="rounded-lg mt-2 max-w-full" />}
 
-                {/* 🔊 Audio */}
                 {message.audio && <audio controls src={message.audio} className="mt-2 w-full rounded-md" />}
 
-                {/* 🎞️ Video */}
                 {message.video && <video controls src={message.video} className="mt-2 w-full rounded-md" />}
 
-                {/* 📎 File -> pdf, docs etc....*/}
                 {message.file && (
                     <a
                         href={message.file}

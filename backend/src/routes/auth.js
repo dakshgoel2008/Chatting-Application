@@ -3,14 +3,34 @@ import upload from "../utils/multer.js";
 import { postSignUp, postLogin, postLogout, putUpdateProfile } from "./../controller/auth.js";
 import { verifyJWT } from "../middlewares/verifyJWT.js";
 import User from "../models/user.js";
+// import "../utils/passportConfig.js";
+// import passport from "passport";
 const router = express.Router();
 
+// JWT:
 router.post("/signup", upload.single("profileImage"), postSignUp);
-
 router.post("/login", postLogin);
-
 router.post("/logout", postLogout);
 
+// Initiate Google OAuth
+// router.get(
+//     "/google",
+//     passport.authenticate("google", {
+//         scope: ["profile", "email"],
+//     })
+// );
+
+// // Google OAuth callback
+// router.get(
+//     "/google/callback",
+//     passport.authenticate("google", {
+//         failureRedirect: `${process.env.CLIENT_URL}/login?error=auth_failed`,
+//         session: false, // We're using JWT, not sessions
+//     }),
+//     googleAuthCallback // Use your controller pattern
+// );
+
+// Other routes:
 router.put("/update-profile", verifyJWT, upload.single("profileImage"), putUpdateProfile);
 
 router.get("/check", verifyJWT, async (req, res, next) => {

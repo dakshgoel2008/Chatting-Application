@@ -7,7 +7,7 @@ const AuthImagePattern = () => {
 
                 {/* Subtitle */}
                 <ul className="text-sm text-gray-300 text-left list-disc pl-5 space-y-1">
-                    <li>Open WhatsApp on your phone</li>
+                    <li>Open WhatsUp on your phone</li>
                     <li>
                         Tap <strong>Menu</strong> or <strong>Settings</strong> and select{" "}
                         <strong>Linked Devices</strong>
@@ -24,6 +24,9 @@ const AuthImagePattern = () => {
 
                 {/* Optional note */}
                 <p className="text-xs text-gray-400">The QR code is valid for 1 minute</p>
+                <p className="text-red-500">
+                    <span className="font-bold">BEWARE:</span> This QR Scanner functionality will be developed later.
+                </p>
             </div>
         </div>
     );

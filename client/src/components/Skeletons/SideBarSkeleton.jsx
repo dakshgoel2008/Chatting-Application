@@ -1,14 +1,11 @@
 import { Users } from "lucide-react";
 
 const SidebarSkeleton = () => {
-    // Create 8 skeleton items
+    // for skeleton showing in container.
     const skeletonContacts = Array(8).fill(null);
 
     return (
-        <aside
-            className="h-full w-20 lg:w-72 border-r border-base-300 
-    flex flex-col transition-all duration-200"
-        >
+        <aside className="h-screen w-20 lg:w-72 border-r border-base-300 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="border-b border-base-300 w-full p-5">
                 <div className="flex items-center gap-2">
