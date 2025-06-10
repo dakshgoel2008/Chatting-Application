@@ -20,8 +20,8 @@ const Privacy = () => {
                             <input type="checkbox" className="toggle toggle-primary" defaultChecked />
                         </label>
                     </div>
-                    <button className="btn btn-secondary">Change Password</button>
-                    <button className="btn btn-error">Delete Account</button>
+                    <button className="btn btn-secondary w-40">Change Password</button>
+                    <button className="btn btn-error w-40">Delete Account</button>
                 </div>
             </div>
         </div>

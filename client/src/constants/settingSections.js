@@ -9,13 +9,6 @@ export const settingSections = [
         description: "Customize the look and feel of your chat interface",
     },
     {
-        id: "profile",
-        label: "Profile",
-        icon: User,
-        requiresAuth: true,
-        description: "Manage your profile information and preferences",
-    },
-    {
         id: "notifications",
         label: "Notifications",
         icon: Bell,
@@ -28,6 +21,13 @@ export const settingSections = [
         icon: Shield,
         requiresAuth: true,
         description: "Manage your privacy settings and security options",
+    },
+    {
+        id: "profile",
+        label: "Profile",
+        icon: User,
+        requiresAuth: true,
+        description: "Manage your profile information and preferences",
     },
     {
         id: "about",

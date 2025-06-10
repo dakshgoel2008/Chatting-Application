@@ -9,6 +9,9 @@ import NavBar from "./components/NavBar";
 import { useUserAuthStore } from "./store/userAuthStore";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
+import Support from "./pages/LegalPages/Support";
+import PrivacyPolicy from "./pages/LegalPages/privacyPolicy";
+import TermsOfService from "./pages/LegalPages/TermsOfService";
 const App = () => {
     const { user, checkAuth, isCheckingAuth, onlineUsers } = useUserAuthStore();
     // check if the user is logged in or not
@@ -35,6 +38,11 @@ const App = () => {
                 <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/"></Navigate>} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login"></Navigate>} />
+
+                {/* LegalPages */}
+                <Route path="/support" element={<Support />}></Route>
+                <Route path="/privacy-policy" element={<PrivacyPolicy />}></Route>
+                <Route path="/terms-of-service" element={<TermsOfService />}></Route>
             </Routes>
             <Toaster />
         </div>

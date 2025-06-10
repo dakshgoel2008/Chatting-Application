@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 const About = () => {
+    const navigate = useNavigate();
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-1">
@@ -8,12 +11,18 @@ const About = () => {
 
             <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
-                    <h4 className="card-title">Chat App</h4>
+                    <h4 className="card-title">WhatsUp</h4>
                     <p className="text-sm text-base-content/70">Version 1.0.0</p>
                     <div className="card-actions justify-start mt-4">
-                        <button className="btn btn-outline">Support</button>
-                        <button className="btn btn-outline">Privacy Policy</button>
-                        <button className="btn btn-outline">Terms of Service</button>
+                        <button className="btn btn-outline" onClick={() => navigate("/support")}>
+                            Support
+                        </button>
+                        <button className="btn btn-outline" onClick={() => navigate("/privacy-policy")}>
+                            Privacy Policy
+                        </button>
+                        <button className="btn btn-outline" onClick={() => navigate("/terms-of-service")}>
+                            Terms of Service
+                        </button>
                     </div>
                 </div>
             </div>

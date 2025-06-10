@@ -82,10 +82,10 @@ const SettingsPage = () => {
                         {!isLoggedIn && (
                             <div className="mt-6 p-4 bg-warning/10 border border-warning/20 rounded-lg">
                                 <p className="text-sm text-warning-content">
-                                    <strong>Sign in</strong> to access more settings and personalize your experience.
+                                    <strong>Log in</strong> to access more settings and personalize your experience.
                                 </p>
-                                <button className="btn btn-warning btn-sm mt-2" onClick={() => navigate("/signup")}>
-                                    Sign In
+                                <button className="btn btn-warning btn-sm mt-2" onClick={() => navigate("/login")}>
+                                    LogIn
                                 </button>
                             </div>
                         )}
