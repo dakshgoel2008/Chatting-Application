@@ -103,7 +103,7 @@ const MessageInput = () => {
                 <TextareaAutosize
                     minRows={1}
                     maxRows={5}
-                    className="flex-1 resize-none bg-base-200 text-white rounded-xl p-3 text-sm placeholder-zinc-400 focus:outline-none"
+                    className="flex-1 resize-none bg-base-200 rounded-xl p-3 text-sm placeholder-zinc-400 focus:outline-none"
                     placeholder="Type a message"
                     value={text}
                     onChange={(e) => setText(e.target.value)}

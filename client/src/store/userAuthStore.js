@@ -13,13 +13,13 @@ export const useUserAuthStore = create((set, get) => ({
     user: null,
     onlineUsers: [],
     socket: null,
-
+    isLoggedIn: false,
     // Check if user is authenticated
     checkAuth: async () => {
         set({ isCheckingAuth: true });
         try {
             const res = await axiosInstance.get("/auth/check");
-            set({ user: res.data });
+            set({ user: res.data, isLoggedIn: !!res.data });
             // socket:
             get().connectSocket();
         } catch (err) {
@@ -35,7 +35,7 @@ export const useUserAuthStore = create((set, get) => ({
         set({ isSigningUp: true });
         try {
             const res = await axiosInstance.post("/auth/signup", data);
-            set({ user: res.data });
+            set({ user: res.data, isLoggedIn: true });
             toast.success("Signed up sucessfully");
 
             // socket:
@@ -53,7 +53,7 @@ export const useUserAuthStore = create((set, get) => ({
         set({ isLoggingIn: true });
         try {
             const res = await axiosInstance.post("/auth/login", data);
-            set({ user: res.data });
+            set({ user: res.data, isLoggedIn: true });
             toast.success("Logged In sucessfully");
 
             // socket:
@@ -70,7 +70,7 @@ export const useUserAuthStore = create((set, get) => ({
     logOut: async () => {
         try {
             await axiosInstance.post("/auth/logout");
-            set({ user: null });
+            set({ user: null, isLoggedIn: false });
             toast.success("Logged Out sucessfully");
             get().disconnectSocket();
         } catch (err) {

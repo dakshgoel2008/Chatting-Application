@@ -13,7 +13,7 @@ const NavBar = () => {
                     <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center">
                         <MessageSquare className="w-5 h-5 text-primary" />
                     </div>
-                    <h1 className="text-lg font-bold text-gray-900 dark:text-white">WhatsUp</h1>
+                    <h1 className="text-lg font-bold">WhatsUp</h1>
                 </Link>
 
                 {/* Right side */}
@@ -24,25 +24,19 @@ const NavBar = () => {
                         className="btn btn-sm flex items-center gap-2 text-gray-700 hover:text-white transition-colors"
                     >
                         <Settings className="w-4 h-4" />
-                        <span className="hidden sm:inline text-white">Settings</span>
+                        <span className="hidden sm:inline">Settings</span>
                     </Link>
 
                     {user && (
                         <>
-                            <Link
-                                to="/profile"
-                                className="btn btn-sm flex items-center gap-2 text-gray-700 hover:text-white transition-colors"
-                            >
+                            <Link to="/profile" className="btn btn-sm flex items-center gap-2 transition-colors">
                                 <User className="w-5 h-5" />
-                                <span className="hidden sm:inline text-white">Profile</span>
+                                <span className="hidden sm:inline">Profile</span>
                             </Link>
 
-                            <button
-                                onClick={logOut}
-                                className="btn btn-sm flex items-center gap-2 text-gray-700 hover:text-white transition-colors"
-                            >
+                            <button onClick={logOut} className="btn btn-sm flex items-center gap-2  transition-colors">
                                 <LogOut className="w-5 h-5" />
-                                <span className="hidden sm:inline text-white">Logout</span>
+                                <span className="hidden sm:inline">Logout</span>
                             </button>
                         </>
                     )}
