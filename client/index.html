@@ -2,12 +2,106 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/src/assets/Logo.png" />
+
+        <!-- Multiple favicon formats for better browser support -->
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/fabicon.png" />
+
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>WhatsUp</title>
+        <meta name="description" content="WhatsUp - Connect and chat with friends instantly" />
+        <meta name="theme-color" content="#00d4ff" />
+
+        <title>WhatsUp - Instant Messaging</title>
+
+        <style>
+            /* Loading screen with the logo */
+            #loading-screen {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                transition: opacity 1s ease;
+            }
+
+            #loading-logo {
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(145deg, #00d4ff, #0099cc);
+                border-radius: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+                animation: loadingPulse 2s ease-in-out infinite;
+            }
+
+            @keyframes loadingPulse {
+                0%,
+                100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+            }
+
+            .loading-bubble {
+                width: 12px;
+                height: 12px;
+                background: white;
+                border-radius: 50%;
+                margin: 2px;
+                animation: loadingDots 1.5s ease-in-out infinite;
+            }
+
+            .loading-bubble:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .loading-bubble:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+            @keyframes loadingDots {
+                0%,
+                60%,
+                100% {
+                    opacity: 0.3;
+                }
+                30% {
+                    opacity: 1;
+                }
+            }
+        </style>
     </head>
     <body>
+        <div id="loading-screen">
+            <div id="loading-logo">
+                <div class="loading-bubble"></div>
+                <div class="loading-bubble"></div>
+                <div class="loading-bubble"></div>
+            </div>
+        </div>
+
         <div id="root"></div>
+
         <script type="module" src="/src/main.jsx"></script>
+
+        <script>
+            window.addEventListener("load", () => {
+                const loadingScreen = document.getElementById("loading-screen");
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = "0";
+                    setTimeout(() => {
+                        loadingScreen.style.display = "none";
+                    }, 500);
+                }
+            });
+        </script>
     </body>
 </html>

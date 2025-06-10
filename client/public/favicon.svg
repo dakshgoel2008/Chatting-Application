@@ -1,0 +1,24 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff"/>
+      <stop offset="100%" style="stop-color:#0099cc"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Main container -->
+  <rect width="32" height="32" rx="8" fill="url(#logoGradient)"/>
+  
+  <!-- Chat bubble 1 with tail -->
+  <ellipse cx="11" cy="12" rx="6" ry="4.5" fill="white"/>
+  <path d="M8 15 L6 17 L8 16 Z" fill="white"/>
+  
+  <!-- Chat bubble 2 with tail -->
+  <ellipse cx="21" cy="20" rx="5" ry="4" fill="rgba(255,255,255,0.9)"/>
+  <path d="M24 23 L26 25 L24 24 Z" fill="rgba(255,255,255,0.9)"/>
+  
+  <!-- Typing dots -->
+  <circle cx="9" cy="12" r="1" fill="#0099cc"/>
+  <circle cx="11" cy="12" r="1" fill="#0099cc"/>
+  <circle cx="13" cy="12" r="1" fill="#0099cc"/>
+</svg>

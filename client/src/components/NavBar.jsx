@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { LogOut, MessageSquare, Settings, User } from "lucide-react";
 import { useUserAuthStore } from "../store/userAuthStore";
-
+import ChatLogo from "./ChatLogo";
 const NavBar = () => {
     const { user, logOut } = useUserAuthStore();
 
@@ -11,7 +11,7 @@ const NavBar = () => {
                 {/* Left side */}
                 <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                     <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <MessageSquare className="w-5 h-5 text-primary" />
+                        <ChatLogo size="small" />
                     </div>
                     <h1 className="text-lg font-bold">WhatsUp</h1>
                 </Link>
@@ -19,10 +19,7 @@ const NavBar = () => {
                 {/* Right side */}
 
                 <div className="flex items-center gap-3">
-                    <Link
-                        to="/settings"
-                        className="btn btn-sm flex items-center gap-2 text-gray-700 hover:text-white transition-colors"
-                    >
+                    <Link to="/settings" className="btn btn-sm flex items-center gap-2  transition-colors">
                         <Settings className="w-4 h-4" />
                         <span className="hidden sm:inline">Settings</span>
                     </Link>

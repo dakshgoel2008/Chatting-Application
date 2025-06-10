@@ -34,8 +34,10 @@ const ChatContainer = () => {
     // console.log(message);
     console.log(message);
     return (
-        <div className="flex-1 flex flex-col overflow-auto">
-            <ChatHeader />
+        <div className="flex-1 flex flex-col h-full">
+            <div className="shrink-0">
+                <ChatHeader />
+            </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {message.map((message) => (
@@ -118,7 +120,9 @@ const ChatContainer = () => {
                 ))}
             </div>
 
-            <MessageInput />
+            <div className="shrink-0">
+                <MessageInput />
+            </div>
         </div>
     );
 };

@@ -37,7 +37,7 @@ const TermsOfService = () => {
                 </p>
             </section>
 
-            <div className="text-center text-sm text-base-content/50 pt-8">Last updated on September 1, 2025</div>
+            <div className="text-center text-sm text-base-content/50 pt-8">Last updated on June 6, 2025</div>
         </div>
     );
 };

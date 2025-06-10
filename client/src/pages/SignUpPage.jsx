@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useUserAuthStore } from "../store/userAuthStore";
-import { Eye, EyeOff, Mail, Lock, User, Loader2, MessageSquare } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Loader2, MessageSquare, CheckCircle, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import AuthImagePattern from "../components/AuthImagePattern"; // TODO: Consider dynamic image support later
 import toast, { Toaster } from "react-hot-toast";
@@ -16,6 +16,8 @@ const SignUpPage = () => {
         profileImage: null,
     });
     const { signUp, isSigningUp } = useUserAuthStore();
+    const [focusedField, setFocusedField] = useState(null);
+    const [passwordStrength, setPasswordStrength] = useState(0);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -23,6 +25,9 @@ const SignUpPage = () => {
             ...prev,
             [name]: value,
         }));
+        if (name === "password") {
+            setPasswordStrength(calculatePasswordStrength(value));
+        }
     };
 
     // random user generator -> identity retrieval is easy.
@@ -69,122 +74,222 @@ const SignUpPage = () => {
         }
     };
 
+    const calculatePasswordStrength = (password) => {
+        let strength = 0;
+
+        // Length check
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+
+        // Character variety checks
+        if (/[a-z]/.test(password)) strength++; // lowercase
+        if (/[A-Z]/.test(password)) strength++; // uppercase
+        if (/[0-9]/.test(password)) strength++; // numbers
+        if (/[^A-Za-z0-9]/.test(password)) strength++; // special characters
+
+        return Math.min(strength, 5); // Cap at 5
+    };
+
+    const getPasswordStrengthColor = () => {
+        if (passwordStrength <= 1) return "bg-red-500";
+        if (passwordStrength <= 3) return "bg-yellow-500";
+        return "bg-green-500";
+    };
+
+    const getPasswordStrengthText = () => {
+        if (passwordStrength <= 1) return "Weak";
+        if (passwordStrength <= 3) return "Medium";
+        return "Strong";
+    };
+
     return (
-        <div className="min-h-screen w-screen grid lg:grid-cols-2 bg-base-100">
+        <div className="min-h-screen w-screen grid lg:grid-cols-2 bg-base-100 ">
             {/* Left: Form Section */}
             <div className="flex flex-col justify-center items-center p-6 sm:p-12">
                 <div className="w-full max-w-md space-y-8">
-                    {/* Header */}
-                    <div className="text-center">
-                        <div className="flex flex-col items-center gap-2 group">
-                            <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                <MessageSquare className="size-6 text-primary" />
+                    {/* Header with animated elements */}
+                    <div className="text-center space-y-4">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-center gap-3 mt-5">
+                                <span className="size-12 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                                    <Users className="size-6 text-white" />
+                                </span>
+                                <h1 className="text-3xl font-bold">Create Account</h1>
                             </div>
-                            <h1 className="text-2xl font-bold mt-2">Create Account</h1>
-                            <p className="text-base-content/60">Join us and start your journey</p>
+                            <p className="text-gray-500 text-lg">Join us and start your journey</p>
                         </div>
                     </div>
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                        {/* Full Name */}
-                        <div className="form-control">
-                            <label className="label" htmlFor="name">
-                                <span className="label-text font-medium">Full Name</span>
-                            </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 size-5" />
+                        {/* Full Name Field */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold  block">Full Name</label>
+                            <div className="relative group">
+                                <User
+                                    className={`absolute left-4 top-1/2 -translate-y-1/2 size-5 transition-colors duration-300 ${
+                                        focusedField === "name" ? "text-emerald-500" : "text-gray-400"
+                                    }`}
+                                />
                                 <input
-                                    id="name"
                                     type="text"
                                     name="name"
-                                    className="input input-bordered w-full pl-10"
-                                    placeholder="Daksh Goel"
+                                    required
+                                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none ${
+                                        focusedField === "name"
+                                            ? "border-emerald-500 shadow-lg shadow-emerald-100"
+                                            : "border-gray-200 hover:border-gray-300"
+                                    }`}
+                                    placeholder="Enter your full name"
                                     value={formData.name}
                                     onChange={handleInputChange}
-                                    autoComplete="name"
-                                    required
+                                    onFocus={() => setFocusedField("name")}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                             </div>
                         </div>
 
-                        {/* Email */}
-                        <div className="form-control">
-                            <label className="label" htmlFor="email">
-                                <span className="label-text font-medium">Email</span>
-                            </label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 size-5" />
+                        {/* Email Field */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold  block">Email Address</label>
+                            <div className="relative group">
+                                <Mail
+                                    className={`absolute left-4 top-1/2 -translate-y-1/2 size-5 transition-colors duration-300 ${
+                                        focusedField === "email" ? "text-emerald-500" : "text-gray-400"
+                                    }`}
+                                />
                                 <input
-                                    id="email"
                                     type="email"
                                     name="email"
-                                    className="input input-bordered w-full pl-10"
-                                    placeholder="you@example.com"
+                                    required
+                                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none ${
+                                        focusedField === "email"
+                                            ? "border-emerald-500 shadow-lg shadow-emerald-100"
+                                            : "border-gray-200 hover:border-gray-300"
+                                    }`}
+                                    placeholder="Enter your email"
                                     value={formData.email}
                                     onChange={handleInputChange}
-                                    autoComplete="email"
-                                    required
+                                    onFocus={() => setFocusedField("email")}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                             </div>
                         </div>
 
-                        {/* Password */}
-                        <div className="form-control">
-                            <label className="label" htmlFor="password">
-                                <span className="label-text font-medium">Password</span>
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 size-5" />
+                        {/* Password Field */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold  block">Password</label>
+                            <div className="relative group">
+                                <Lock
+                                    className={`absolute left-4 top-1/2 -translate-y-1/2 size-5 transition-colors duration-300 ${
+                                        focusedField === "password" ? "text-emerald-500" : "text-gray-400"
+                                    }`}
+                                />
                                 <input
-                                    id="password"
                                     type={showPassword ? "text" : "password"}
                                     name="password"
-                                    className="input input-bordered w-full pl-10 pr-10"
-                                    placeholder="••••••••"
+                                    required
+                                    className={`w-full pl-12 pr-12 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none ${
+                                        focusedField === "password"
+                                            ? "border-emerald-500 shadow-lg shadow-emerald-100"
+                                            : "border-gray-200 hover:border-gray-300"
+                                    }`}
+                                    placeholder="Create a strong password"
                                     value={formData.password}
                                     onChange={handleInputChange}
-                                    autoComplete="new-password"
-                                    required
+                                    onFocus={() => setFocusedField("password")}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40"
                                     onClick={() => setShowPassword((prev) => !prev)}
-                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1"
                                 >
                                     {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                                 </button>
                             </div>
+
+                            {/* Password Strength Indicator */}
+                            {formData.password && (
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">Password strength:</span>
+                                        <span
+                                            className={`font-medium ${
+                                                passwordStrength <= 1
+                                                    ? "text-red-500"
+                                                    : passwordStrength <= 3
+                                                    ? "text-yellow-500"
+                                                    : "text-green-500"
+                                            }`}
+                                        >
+                                            {getPasswordStrengthText()}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
+                                            style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Username (optional) */}
-                        <div className="form-control">
-                            <label className="label" htmlFor="username">
-                                <span className="label-text font-medium">
-                                    Username <span className="text-base-content/50">(optional)</span>
-                                </span>
+                        {/* Username Field (Optional) */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold block">
+                                Username <span className="text-gray-400 font-normal">(optional)</span>
                             </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 size-5" />
+                            <div className="relative group">
+                                <User
+                                    className={`absolute left-4 top-1/2 -translate-y-1/2 size-5 transition-colors duration-300 ${
+                                        focusedField === "username" ? "text-emerald-500" : "text-gray-400"
+                                    }`}
+                                />
                                 <input
-                                    id="username"
                                     type="text"
                                     name="username"
-                                    className="input input-bordered w-full pl-10"
-                                    placeholder="e.g. daksh_goel23"
+                                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none ${
+                                        focusedField === "username"
+                                            ? "border-emerald-500 shadow-lg shadow-emerald-100"
+                                            : "border-gray-200 hover:border-gray-300"
+                                    }`}
+                                    placeholder="Choose a username"
                                     value={formData.username}
                                     onChange={handleInputChange}
-                                    autoComplete="username"
+                                    onFocus={() => setFocusedField("username")}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                             </div>
-                            <p className="text-sm text-base-content/50 mt-1">
-                                Leave blank to get an auto-generated username.
+                            <p className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+                                💡 Leave blank for an auto-generated username
+                            </p>
+                        </div>
+
+                        {/* Terms and Conditions */}
+                        <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
+                            <CheckCircle className="size-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                                By creating an account, you agree to our{" "}
+                                <Link
+                                    to="/terms-of-service"
+                                    className="text-emerald-600 font-medium hover:text-emerald-800 transition-colors"
+                                >
+                                    Terms of Service
+                                </Link>{" "}
+                                and{" "}
+                                <Link
+                                    to="/privacy-policy"
+                                    className="text-emerald-600 font-medium hover:text-emerald-800 transition-colors"
+                                >
+                                    Privacy Policy
+                                </Link>
                             </p>
                         </div>
 
                         {/* Submit */}
-                        <button type="submit" className="btn btn-primary w-full" disabled={isSigningUp}>
+                        <button type="submit" className="btn btn-primary w-full rounded-full" disabled={isSigningUp}>
                             {isSigningUp ? (
                                 <>
                                     <Loader2 className="size-5 animate-spin mr-2" />
@@ -200,7 +305,7 @@ const SignUpPage = () => {
                     <div className="text-center">
                         <p className="text-base-content/60">
                             Already have an account?{" "}
-                            <Link to="/login" className="link link-primary">
+                            <Link to="/login" className="link link-primary font-medium">
                                 Log in
                             </Link>
                         </p>
