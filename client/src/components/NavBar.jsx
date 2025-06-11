@@ -109,15 +109,17 @@ const NavBar = () => {
         console.log("Opening search...");
     };
 
-    const navWidth = isCollapsed ? "w-12" : "w-20";
+    const navWidth = isCollapsed ? "w-14" : "w-20";
 
     return (
         <nav
-            className={`fixed top-0 h-full ${navWidth} z-40 bg-base-100 border-base-300 backdrop-blur-lg bg-base-100/95 transition-all duration-300 ${
-                isRightSide ? "right-0 border-l" : "left-0 border-r"
-            } overflow-hidden`}
+            className={`fixed top-0 h-full ${navWidth} z-40 border-base-300 backdrop-blur-lg transition-all duration-300
+        ${isRightSide ? "right-0 border-l" : "left-0 border-r"}
+        overflow-hidden
+        ${isLightTheme(theme) ? "bg-blue-50 text-gray-900" : "bg-gray-900 text-white"} transition-colors duration-500
+    `}
         >
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full bg-slate-500">
                 {/* Fixed Logo */}
                 <div className="flex-shrink-0 p-3 pb-0">
                     <Link to="/" className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity group">
@@ -260,7 +262,7 @@ const NavBar = () => {
                             /* Logout */
                             <button
                                 onClick={logOut}
-                                className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-error/10 hover:text-error transition-colors group w-full"
+                                className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-red-900/10 hover:text-error transition-colors group w-full"
                                 title="Logout"
                             >
                                 <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />

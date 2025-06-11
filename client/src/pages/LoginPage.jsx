@@ -34,7 +34,7 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen grid lg:grid-cols-2 bg-base-100">
+        <div className="h-screen overflow-y-auto grid lg:grid-cols-2 bg-base-100">
             {/* Left: Login Form */}
             <div className="flex flex-col justify-center items-center p-6 sm:p-12">
                 <div className="w-full max-w-md space-y-8">
