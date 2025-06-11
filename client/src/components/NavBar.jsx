@@ -1,45 +1,276 @@
 import { Link } from "react-router-dom";
-import { LogOut, MessageSquare, Settings, User } from "lucide-react";
+import {
+    LogOut,
+    Settings,
+    User,
+    ArrowLeftRight,
+    Search,
+    Archive,
+    Star,
+    Moon,
+    Sun,
+    HelpCircle,
+    Users,
+} from "lucide-react";
 import { useUserAuthStore } from "../store/userAuthStore";
+import { useThemeStore } from "../store/userThemeStore";
+import { THEMES } from "../constants";
+import { useState, useEffect } from "react";
 import ChatLogo from "./ChatLogo";
+
 const NavBar = () => {
     const { user, logOut } = useUserAuthStore();
+    const { theme, setTheme } = useThemeStore();
+    const [isRightSide, setIsRightSide] = useState(false);
+    const [notifications, setNotifications] = useState(3);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
+    // Simple theme categorization
+    const isLightTheme = (themeName) => {
+        const lightThemes = [
+            "light",
+            "cupcake",
+            "bumblebee",
+            "emerald",
+            "corporate",
+            "retro",
+            "valentine",
+            "garden",
+            "lofi",
+            "pastel",
+            "fantasy",
+            "wireframe",
+            "cmyk",
+            "autumn",
+            "acid",
+        ];
+        return lightThemes.includes(themeName);
+    };
+
+    // Load user preferences from localStorage
+    useEffect(() => {
+        const savedPosition = localStorage.getItem("navbar-position");
+        const savedCollapsed = localStorage.getItem("navbar-collapsed") === "true";
+
+        if (savedPosition === "right") setIsRightSide(true);
+        setIsCollapsed(savedCollapsed);
+    }, []);
+
+    // Toggle navbar position
+    const togglePosition = () => {
+        const newPosition = !isRightSide;
+        setIsRightSide(newPosition);
+        localStorage.setItem("navbar-position", newPosition ? "right" : "left");
+        window.dispatchEvent(
+            new CustomEvent("navbar-position-changed", {
+                detail: { position: newPosition ? "right" : "left" },
+            })
+        );
+    };
+
+    // Simple theme toggle that reads directly from localStorage
+    const toggleTheme = () => {
+        // Get preferred themes from localStorage, with fallbacks
+        const preferredLight = localStorage.getItem("preferred-light-theme") || "light";
+        const preferredDark = localStorage.getItem("preferred-dark-theme") || "dark";
+
+        // Ensure the themes exist in our THEMES array
+        const lightTheme = THEMES.includes(preferredLight) ? preferredLight : "light";
+        const darkTheme = THEMES.includes(preferredDark) ? preferredDark : "dark";
+
+        if (isLightTheme(theme)) {
+            // Currently light, switch to dark
+            setTheme(darkTheme);
+        } else {
+            // Currently dark, switch to light
+            setTheme(lightTheme);
+        }
+    };
+
+    // Toggle navbar collapse
+    const toggleCollapse = () => {
+        const newCollapsed = !isCollapsed;
+        setIsCollapsed(newCollapsed);
+        localStorage.setItem("navbar-collapsed", newCollapsed.toString());
+    };
+
+    // Create new chat/conversation
+    const handleNewChat = () => {
+        console.log("Creating new chat...");
+    };
+
+    // Handle notifications
+    const handleNotifications = () => {
+        console.log("Opening notifications...");
+    };
+
+    // Handle search
+    const handleSearch = () => {
+        console.log("Opening search...");
+    };
+
+    const navWidth = isCollapsed ? "w-12" : "w-20";
 
     return (
-        <header className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 backdrop-blur-lg bg-base-100/80">
-            <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                {/* Left side */}
-                <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                    <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <ChatLogo size="small" />
-                    </div>
-                    <h1 className="text-lg font-bold">WhatsUp</h1>
-                </Link>
-
-                {/* Right side */}
-
-                <div className="flex items-center gap-3">
-                    <Link to="/settings" className="btn btn-sm flex items-center gap-2  transition-colors">
-                        <Settings className="w-4 h-4" />
-                        <span className="hidden sm:inline">Settings</span>
+        <nav
+            className={`fixed top-0 h-full ${navWidth} z-40 bg-base-100 border-base-300 backdrop-blur-lg bg-base-100/95 transition-all duration-300 ${
+                isRightSide ? "right-0 border-l" : "left-0 border-r"
+            } overflow-hidden`}
+        >
+            <div className="flex flex-col h-full">
+                {/* Fixed Logo */}
+                <div className="flex-shrink-0 p-3 pb-0">
+                    <Link to="/" className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity group">
+                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                            <ChatLogo size="small" />
+                        </div>
+                        {!isCollapsed && <span className="text-xs font-bold text-center">WhatsUp</span>}
                     </Link>
+                </div>
 
-                    {user && (
-                        <>
-                            <Link to="/profile" className="btn btn-sm flex items-center gap-2 transition-colors">
-                                <User className="w-5 h-5" />
-                                <span className="hidden sm:inline">Profile</span>
-                            </Link>
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent p-3 pt-6">
+                    {/* Quick Actions */}
+                    <div className="flex flex-col gap-2 mb-4 pb-4 border-b border-base-300">
+                        {user && (
+                            <>
+                                {/* Search */}
+                                <button
+                                    onClick={handleSearch}
+                                    className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group"
+                                    title="Search"
+                                >
+                                    <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                    {!isCollapsed && <span className="text-xs">Search</span>}
+                                </button>
+                            </>
+                        )}
+                    </div>
 
-                            <button onClick={logOut} className="btn btn-sm flex items-center gap-2  transition-colors">
-                                <LogOut className="w-5 h-5" />
-                                <span className="hidden sm:inline">Logout</span>
-                            </button>
-                        </>
+                    {/* Navigation Items */}
+                    <div className="flex flex-col gap-2 mb-4">
+                        {user && (
+                            <>
+                                {/* Contacts */}
+                                <Link
+                                    to="/"
+                                    className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group"
+                                    title="Contacts"
+                                >
+                                    <Users className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                    {!isCollapsed && <span className="text-xs">Contacts</span>}
+                                </Link>
+                                <Link
+                                    to="/starred"
+                                    className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group"
+                                    title="Starred"
+                                >
+                                    <Star className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                    {!isCollapsed && <span className="text-xs">Starred</span>}
+                                </Link>
+
+                                {/* Archived Chats */}
+                                <Link
+                                    to="/archived"
+                                    className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group"
+                                    title="Archived"
+                                >
+                                    <Archive className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                    {!isCollapsed && <span className="text-xs">Archive</span>}
+                                </Link>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Theme Toggle - Simplified */}
+                    <button
+                        onClick={toggleTheme}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group w-full"
+                        title={`Switch to ${isLightTheme(theme) ? "Dark" : "Light"} Mode`}
+                    >
+                        {isLightTheme(theme) ? (
+                            <Moon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        ) : (
+                            <Sun className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        )}
+                        {!isCollapsed && <span className="text-xs">{isLightTheme(theme) ? "Dark" : "Light"}</span>}
+                    </button>
+
+                    {/* Help - only when user is not logged in */}
+                    {!user && (
+                        <Link
+                            to="/support"
+                            className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group"
+                            title="Help & Support"
+                        >
+                            <HelpCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            {!isCollapsed && <span className="text-xs">Help</span>}
+                        </Link>
                     )}
+
+                    {/* Collapse Toggle */}
+                    <button
+                        onClick={toggleCollapse}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group w-full"
+                        title={isCollapsed ? "Expand Navbar" : "Collapse Navbar"}
+                    >
+                        <ArrowLeftRight
+                            className={`w-4 h-4 group-hover:scale-110 transition-transform ${
+                                isCollapsed ? "rotate-90" : ""
+                            }`}
+                        />
+                        {!isCollapsed && <span className="text-xs">Collapse</span>}
+                    </button>
+
+                    {/* Position Toggle */}
+                    <button
+                        onClick={togglePosition}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group w-full"
+                        title={`Move to ${isRightSide ? "Left" : "Right"} Side`}
+                    >
+                        <ArrowLeftRight className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        {!isCollapsed && <span className="text-xs">{isRightSide ? "Left" : "Right"}</span>}
+                    </button>
+                </div>
+
+                {/* Bottom Fixed Section */}
+                <div className="flex-shrink-0 p-3 pt-0 space-y-2">
+                    <div className="pt-3 border-t border-base-300 space-y-2">
+                        {/* Settings */}
+                        <Link
+                            to="/settings"
+                            className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group"
+                            title="Settings"
+                        >
+                            <Settings className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                            {!isCollapsed && <span className="text-xs">Settings</span>}
+                        </Link>
+                        {/* Profile */}
+                        {user && (
+                            <Link
+                                to="/profile"
+                                className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-base-200 transition-colors group"
+                                title="Profile"
+                            >
+                                <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                {!isCollapsed && <span className="text-xs">Profile</span>}
+                            </Link>
+                        )}
+                        {user && (
+                            /* Logout */
+                            <button
+                                onClick={logOut}
+                                className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-error/10 hover:text-error transition-colors group w-full"
+                                title="Logout"
+                            >
+                                <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                {!isCollapsed && <span className="text-xs">Logout</span>}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
-        </header>
+        </nav>
     );
 };
 

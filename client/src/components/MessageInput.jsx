@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Paperclip, Send, X } from "lucide-react";
 import { useUserChatStore } from "../store/userChatStore";
+import { useUserAuthStore } from "../store/userAuthStore";
 import TextareaAutosize from "react-textarea-autosize";
 
 const MessageInput = () => {
@@ -8,9 +9,61 @@ const MessageInput = () => {
     const [file, setFile] = useState(null);
     const [fileType, setFileType] = useState(null); // image, audio, file
     const [previewURL, setPreviewURL] = useState(null);
+    const [isTyping, setIsTyping] = useState(false);
 
     const inputRef = useRef(null);
-    const { sendMessage } = useUserChatStore();
+    const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
+
+    const { sendMessage, selectedUser } = useUserChatStore();
+    const { socket, user } = useUserAuthStore();
+
+    // Function to start typing indicator
+    const startTyping = () => {
+        if (!socket || !selectedUser || !user) return;
+
+        // Only emit if not already typing
+        if (!isTypingRef.current) {
+            socket.emit("typing-start", {
+                userId: user._id,
+                recipientId: selectedUser._id,
+                userName: user.name,
+            });
+            isTypingRef.current = true;
+            setIsTyping(true);
+            console.log("Started typing to:", selectedUser.name);
+        }
+
+        // Clear existing timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Set timeout to stop typing after 1 second of inactivity
+        typingTimeoutRef.current = setTimeout(() => {
+            stopTyping();
+        }, 1000);
+    };
+
+    // Function to stop typing indicator
+    const stopTyping = () => {
+        if (!socket || !selectedUser || !user) return;
+
+        if (isTypingRef.current) {
+            socket.emit("typing-stop", {
+                userId: user._id,
+                recipientId: selectedUser._id,
+            });
+            isTypingRef.current = false;
+            setIsTyping(false);
+            console.log("Stopped typing to:", selectedUser.name);
+        }
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+        }
+    };
 
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
@@ -23,6 +76,8 @@ const MessageInput = () => {
             setFileType("image");
         } else if (type.startsWith("audio/")) {
             setFileType("audio");
+        } else if (type.startsWith("video/")) {
+            setFileType("video");
         } else {
             setFileType("file");
         }
@@ -38,9 +93,25 @@ const MessageInput = () => {
         setPreviewURL(null);
     };
 
+    // Handle text input change with typing indicator
+    const handleTextChange = (e) => {
+        const value = e.target.value;
+        setText(value);
+
+        // Start typing indicator when user types
+        if (value.trim()) {
+            startTyping();
+        } else {
+            stopTyping();
+        }
+    };
+
     const handleSend = async (e) => {
         e.preventDefault();
         if (!text.trim() && !file) return;
+
+        // Stop typing before sending message
+        stopTyping();
 
         const formData = new FormData();
         formData.append("text", text);
@@ -51,6 +122,30 @@ const MessageInput = () => {
         setText("");
         removeAttachment();
     };
+
+    // Handle input blur (when user clicks away)
+    const handleBlur = () => {
+        // Small delay to allow for form submission
+        setTimeout(() => {
+            stopTyping();
+        }, 100);
+    };
+
+    // Cleanup on component unmount or selectedUser change
+    useEffect(() => {
+        return () => {
+            stopTyping();
+        };
+    }, [selectedUser]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+        };
+    }, []);
 
     return (
         <div className="p-4 w-full border-t border-zinc-700 bg-base-100">
@@ -80,46 +175,52 @@ const MessageInput = () => {
             )}
 
             {/* Input + Buttons */}
-            <form onSubmit={handleSend} className="flex items-center gap-2">
-                {/* Hidden File Input */}
-                <input
-                    type="file"
-                    accept="image/*,audio/*,.pdf,.doc,.docx,.ppt,.pptx"
-                    ref={inputRef}
-                    className="hidden"
-                    onChange={handleFileChange}
-                />
+            <div className="relative">
+                <form onSubmit={handleSend} className="flex items-center gap-2">
+                    {/* Hidden File Input */}
+                    <input
+                        type="file"
+                        accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
+                        ref={inputRef}
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
 
-                {/* Attach Button */}
-                <button
-                    type="button"
-                    className="btn btn-circle btn-ghost text-zinc-500 hover:text-white"
-                    onClick={() => inputRef.current?.click()}
-                >
-                    <Paperclip size={20} />
-                </button>
+                    {/* Attach Button */}
+                    <button
+                        type="button"
+                        className="btn btn-circle btn-ghost text-zinc-500 hover:text-white"
+                        onClick={() => inputRef.current?.click()}
+                    >
+                        <Paperclip size={20} />
+                    </button>
 
-                {/* Text Input */}
-                <TextareaAutosize
-                    minRows={1}
-                    maxRows={5}
-                    className="flex-1 resize-none bg-base-200 rounded-xl p-3 text-sm placeholder-zinc-400 focus:outline-none"
-                    placeholder="Type a message"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSend(e);
-                        }
-                    }}
-                />
+                    {/* Text Input */}
+                    <TextareaAutosize
+                        minRows={1}
+                        maxRows={5}
+                        className="flex-1 resize-none bg-base-200 rounded-xl p-3 text-sm placeholder-zinc-400 focus:outline-none"
+                        placeholder="Type a message"
+                        value={text}
+                        onChange={handleTextChange}
+                        onBlur={handleBlur}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend(e);
+                            }
+                        }}
+                    />
 
-                {/* Send Button */}
-                <button type="submit" className="btn btn-circle" disabled={!text.trim() && !file}>
-                    <Send size={20} />
-                </button>
-            </form>
+                    {/* Send Button */}
+                    <button type="submit" className="btn btn-circle" disabled={!text.trim() && !file}>
+                        <Send size={20} />
+                    </button>
+                </form>
+
+                {/* Typing indicator for current user */}
+                {isTyping && <div className="absolute -top-6 left-2 text-xs text-primary animate-pulse">Typing...</div>}
+            </div>
         </div>
     );
 };

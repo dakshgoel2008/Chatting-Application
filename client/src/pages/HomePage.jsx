@@ -7,7 +7,7 @@ const HomePage = () => {
     const { selectedUser } = useUserChatStore();
 
     return (
-        <div className="h-screen w-screen overflow-hidden flex mt-10">
+        <div className="h-screen w-full overflow-hidden flex">
             {/* Sidebar */}
             <SideBar />
 
