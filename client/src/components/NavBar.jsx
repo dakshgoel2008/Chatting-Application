@@ -29,20 +29,6 @@ const NavBar = () => {
     const isLightTheme = (themeName) => {
         const lightThemes = [
             "light",
-            "cupcake",
-            "bumblebee",
-            "emerald",
-            "corporate",
-            "retro",
-            "valentine",
-            "garden",
-            "lofi",
-            "pastel",
-            "fantasy",
-            "wireframe",
-            "cmyk",
-            "autumn",
-            "acid",
         ];
         return lightThemes.includes(themeName);
     };

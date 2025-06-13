@@ -55,14 +55,7 @@ const Profile = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0b141a] text-white">
-            {/* Header */}
-            <div className="bg-[#202c33] px-4 py-6 border-b border-[#2a3942]">
-                <div className="max-w-md mx-auto">
-                    <h1 className="text-xl font-medium text-[#e9edef]">Profile</h1>
-                </div>
-            </div>
-
+        <div className="min-h-screen text-white">
             <div className="max-w-md mx-auto">
                 {/* Profile Picture Section */}
                 <div className="bg-[#111b21] px-6 py-8 border-b border-[#2a3942]">
@@ -171,7 +164,7 @@ const Profile = () => {
 
                 {/* Footer */}
                 <div className="px-6 pb-8">
-                    <p className="text-[#8696a0] text-xs text-center">WhatsApp from Meta</p>
+                    <p className="text-[#8696a0] text-xs text-center">WhatsUp from DKG(aka UG_BEAST)</p>
                 </div>
             </div>
         </div>
