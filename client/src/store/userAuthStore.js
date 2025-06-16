@@ -10,6 +10,7 @@ export const useUserAuthStore = create((set, get) => ({
     isSigningUp: false,
     isCheckingAuth: true,
     isUpdatingProfile: false,
+    isUpdatingPassword: false,
     user: null,
     onlineUsers: [],
     socket: null,
@@ -90,6 +91,20 @@ export const useUserAuthStore = create((set, get) => ({
             toast.error(err?.response?.data?.message || err?.message || "Update Profile failed. Please try again.");
         } finally {
             set({ isUpdatingProfile: false });
+        }
+    },
+
+    updatePassword: async (data) => {
+        set({ isUpdatingPassword: true });
+        try {
+            const res = await axiosInstance.put("/auth/update-password", data);
+            set({ user: res.data.user });
+            toast.success("Password updated sucessfully");
+        } catch (err) {
+            console.log("Update Password error:", err);
+            toast.error(err?.response?.data?.message || err?.message || "Update Password failed. Please try again.");
+        } finally {
+            set({ isUpdatingPassword: false });
         }
     },
 
