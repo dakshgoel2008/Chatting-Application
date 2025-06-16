@@ -1,6 +1,13 @@
 import express from "express";
 import upload from "../utils/multer.js";
-import { postSignUp, postLogin, postLogout, putUpdateProfile, putUpdatePassword } from "./../controller/auth.js";
+import {
+    postSignUp,
+    postLogin,
+    postLogout,
+    putUpdateProfile,
+    putUpdatePassword,
+    postDeleteAccount,
+} from "./../controller/auth.js";
 import { verifyJWT } from "../middlewares/verifyJWT.js";
 import User from "../models/user.js";
 // import "../utils/passportConfig.js";
@@ -34,6 +41,8 @@ router.post("/logout", postLogout);
 router.put("/update-profile", verifyJWT, upload.single("profileImage"), putUpdateProfile);
 
 router.put("/update-password", verifyJWT, putUpdatePassword);
+
+router.post("/delete-account", verifyJWT, postDeleteAccount);
 
 router.get("/check", verifyJWT, async (req, res, next) => {
     try {

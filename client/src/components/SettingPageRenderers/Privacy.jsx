@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useUserAuthStore } from "../../store/userAuthStore";
-import { Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, Trash2 } from "lucide-react";
 
 const Privacy = () => {
+    // Password change implementation.
     const [showPassword, setShowPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -75,7 +76,7 @@ const Privacy = () => {
         }
     };
 
-    const closeModal = () => {
+    const closePasswordModal = () => {
         setIsPasswordModalOpen(false);
         setPasswordData({
             password: "",
@@ -87,6 +88,57 @@ const Privacy = () => {
         setShowPassword(false);
         setShowNewPassword(false);
         setShowConfirmPassword(false);
+    };
+
+    // delete account implementation
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deletePassword, setDeletePassword] = useState("");
+    const [showDeletePassword, setShowDeletePassword] = useState(false);
+    const [deleteErrors, setDeleteErrors] = useState({});
+    const { deleteAccount, isDeletingAccount } = useUserAuthStore();
+
+    const deleteAccountHandler = async () => {
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteSubmit = async (e) => {
+        e.preventDefault();
+
+        // Reset errors
+        setDeleteErrors({});
+
+        // Validation - only check for password
+        const errors = {};
+        if (!deletePassword) {
+            errors.password = "Password is required to delete account";
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setDeleteErrors(errors);
+            return;
+        }
+
+        try {
+            // Call deleteAccount with password for verification
+            await deleteAccount({ password: deletePassword });
+
+            // Close modal (this might not execute if user is redirected)
+            closeDeleteModal();
+        } catch (error) {
+            // Handle specific error cases
+            if (error.response?.status === 401) {
+                setDeleteErrors({ password: "Incorrect password" });
+            } else {
+                setDeleteErrors({ general: "Failed to delete account. Please try again." });
+            }
+        }
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setDeletePassword("");
+        setShowDeletePassword(false);
+        setDeleteErrors({});
     };
 
     return (
@@ -124,7 +176,32 @@ const Privacy = () => {
                             "Change Password"
                         )}
                     </button>
-                    <button className="btn btn-error w-40">Delete Account</button>
+                    <div className="pt-4 border-t border-gray-200">
+                        <div className="flex items-center gap-3 mb-3">
+                            <AlertTriangle className="w-5 h-5 text-warning" />
+                            <span className="text-sm font-medium text-warning">Danger Zone</span>
+                        </div>
+                        <p className="text-sm text-base-content/70 mb-4">
+                            Once you delete your account, there is no going back. This action cannot be undone.
+                        </p>
+                        <button
+                            className="btn btn-error w-40 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-none shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                            onClick={deleteAccountHandler}
+                            disabled={isDeletingAccount}
+                        >
+                            {isDeletingAccount ? (
+                                <>
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete Account
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -141,7 +218,7 @@ const Privacy = () => {
                             {/* Current Password */}
                             <div className="form-control">
                                 <label className="label">
-                                    <span className="label-text font-semibold">Current Password</span>
+                                    <span className="label-text font-semibold text-black">Current Password</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -173,7 +250,7 @@ const Privacy = () => {
                             {/* New Password */}
                             <div className="form-control">
                                 <label className="label">
-                                    <span className="label-text font-semibold">New Password</span>
+                                    <span className="label-text font-semibold text-black">New Password</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -205,7 +282,7 @@ const Privacy = () => {
                             {/* Confirm Password */}
                             <div className="form-control">
                                 <label className="label">
-                                    <span className="label-text font-semibold">Confirm New Password</span>
+                                    <span className="label-text font-semibold text-black">Confirm New Password</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -245,7 +322,7 @@ const Privacy = () => {
                                 <button
                                     type="button"
                                     className="btn btn-ghost"
-                                    onClick={closeModal}
+                                    onClick={closePasswordModal}
                                     disabled={isUpdatingPassword}
                                 >
                                     Cancel
@@ -268,7 +345,118 @@ const Privacy = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="modal-backdrop" onClick={closeModal}></div>
+                    <div className="modal-backdrop" onClick={closePasswordModal}></div>
+                </div>
+            )}
+
+            {/* Delete Account Confirmation Modal */}
+            {isDeleteModalOpen && (
+                <div className="modal modal-open">
+                    <div className="modal-box bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-md">
+                        <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-3xl -m-6 mb-6">
+                            <div className="flex items-center gap-3">
+                                <AlertTriangle className="w-8 h-8 text-white" />
+                                <div>
+                                    <h3 className="text-2xl font-bold text-white mb-1">Delete Account</h3>
+                                    <p className="text-red-100">This action cannot be undone</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            {/* Warning Message */}
+                            <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+                                <h4 className="font-semibold text-red-800 mb-2">What will happen:</h4>
+                                <ul className="text-sm text-red-700 space-y-1">
+                                    <li>• Your profile and all personal data will be permanently deleted</li>
+                                    <li>• All your messages and conversations will be removed</li>
+                                    <li>• You will be immediately logged out</li>
+                                </ul>
+                            </div>
+
+                            {/* General Error */}
+                            {deleteErrors.general && (
+                                <div className="alert alert-error">
+                                    <AlertTriangle className="w-5 h-5" />
+                                    <span>{deleteErrors.general}</span>
+                                </div>
+                            )}
+
+                            {/* Password Confirmation */}
+                            <div className="form-control">
+                                <label className="label">
+                                    <span className="label-text font-semibold text-black">
+                                        Confirm with your password
+                                    </span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={showDeletePassword ? "text" : "password"}
+                                        className={`input input-bordered w-full pr-12 text-black bg-gray-50 border-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 ${
+                                            deleteErrors.password
+                                                ? "border-red-500 bg-red-50"
+                                                : "border-gray-200 focus:bg-white"
+                                        }`}
+                                        value={deletePassword}
+                                        onChange={(e) => {
+                                            setDeletePassword(e.target.value);
+                                            if (deleteErrors.password) {
+                                                setDeleteErrors((prev) => ({ ...prev, password: "" }));
+                                            }
+                                        }}
+                                        placeholder="Enter your password"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                        onClick={() => setShowDeletePassword(!showDeletePassword)}
+                                    >
+                                        {showDeletePassword ? (
+                                            <EyeOff className="w-5 h-5" />
+                                        ) : (
+                                            <Eye className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </div>
+                                {deleteErrors.password && (
+                                    <label className="label">
+                                        <span className="label-text-alt text-error">{deleteErrors.password}</span>
+                                    </label>
+                                )}
+                            </div>
+
+                            {/* Modal Actions */}
+                            <div className="modal-action">
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost text-red-500"
+                                    onClick={closeDeleteModal}
+                                    disabled={isDeletingAccount}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteSubmit}
+                                    className="btn btn-error bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-none shadow-lg hover:shadow-xl"
+                                    disabled={isDeletingAccount}
+                                >
+                                    {isDeletingAccount ? (
+                                        <>
+                                            <span className="loading loading-spinner loading-sm"></span>
+                                            Deleting Account...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-4 h-4" />
+                                            Delete My Account
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="modal-backdrop" onClick={closeDeleteModal}></div>
                 </div>
             )}
         </div>

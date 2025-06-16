@@ -15,6 +15,7 @@ export const useUserAuthStore = create((set, get) => ({
     onlineUsers: [],
     socket: null,
     isLoggedIn: false,
+    isDeletingAccount: false,
     // Check if user is authenticated
     checkAuth: async () => {
         set({ isCheckingAuth: true });
@@ -38,7 +39,7 @@ export const useUserAuthStore = create((set, get) => ({
             const res = await axiosInstance.post("/auth/signup", data);
             set({ user: res.data, isLoggedIn: true });
             toast.success("Signed up sucessfully");
-
+            window.location.href = "/login";
             // socket:
             get().connectSocket();
         } catch (err) {
@@ -74,6 +75,7 @@ export const useUserAuthStore = create((set, get) => ({
             set({ user: null, isLoggedIn: false });
             toast.success("Logged Out sucessfully");
             get().disconnectSocket();
+            window.location.href = "/login";
         } catch (err) {
             console.log("Log error:", err);
             toast.error(err?.response?.data?.message || err?.message || "Logout failed");
@@ -105,6 +107,49 @@ export const useUserAuthStore = create((set, get) => ({
             toast.error(err?.response?.data?.message || err?.message || "Update Password failed. Please try again.");
         } finally {
             set({ isUpdatingPassword: false });
+        }
+    },
+
+    deleteAccount: async (data = {}) => {
+        set({ isDeletingAccount: true });
+        try {
+            // Send password for verification if provided
+            await axiosInstance.post("/auth/delete-account", data);
+
+            // Clear all user data
+            set({
+                user: null,
+                isLoggedIn: false,
+            });
+
+            // Disconnect socket
+            get().disconnectSocket();
+
+            toast.success("Account deleted successfully");
+            window.location.href = "/login";
+        } catch (err) {
+            console.log("Delete Account error:", err);
+
+            // Handle specific error cases
+            let errorMessage = "Delete Account failed. Please try again.";
+
+            if (err?.response?.status === 401) {
+                errorMessage = "Incorrect password";
+            } else if (err?.response?.status === 403) {
+                errorMessage = "You don't have permission to delete this account";
+            } else if (err?.response?.status === 404) {
+                errorMessage = "Account not found";
+            } else if (err?.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err?.message) {
+                errorMessage = err.message;
+            }
+
+            toast.error(errorMessage);
+
+            throw err;
+        } finally {
+            set({ isDeletingAccount: false });
         }
     },
 

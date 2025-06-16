@@ -228,3 +228,29 @@ export const putUpdatePassword = ErrorWrapper(async (req, res, next) => {
         success: true,
     });
 });
+
+export const postDeleteAccount = ErrorWrapper(async (req, res, next) => {
+    const { password } = req.body;
+    const requiredFields = ["password"];
+    const missingFields = requiredFields.filter((field) => !req.body[field]);
+
+    if (missingFields.length > 0) {
+        throw new ErrorHandler(400, `Missing required fields: ${missingFields.join(", ")}`);
+    }
+
+    const user = await User.findOne({ _id: req.user._id });
+
+    if (!user) {
+        throw new ErrorHandler(401, "User not found");
+    }
+
+    if (!(await user.comparePassword(password))) {
+        throw new ErrorHandler(401, "Invalid password, please fill the correct early password (for security purposes)");
+    }
+
+    await user.deleteOne();
+    res.status(200).json({
+        message: "Account deleted successfully",
+        success: true,
+    });
+});

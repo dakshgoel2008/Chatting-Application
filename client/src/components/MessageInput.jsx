@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Paperclip, Send, X } from "lucide-react";
+import { Mic, Paperclip, Send, X } from "lucide-react";
 import { useUserChatStore } from "../store/userChatStore";
 import { useUserAuthStore } from "../store/userAuthStore";
 import TextareaAutosize from "react-textarea-autosize";
@@ -123,6 +123,13 @@ const MessageInput = () => {
         removeAttachment();
     };
 
+    // recording:
+    const handleStartRecording = () => {
+        setTimeout(() => {
+            alert("Demo: Later I will be implementing recording of the audio message in this");
+        }, 500);
+    };
+
     // Handle input blur (when user clicks away)
     const handleBlur = () => {
         // Small delay to allow for form submission
@@ -211,7 +218,10 @@ const MessageInput = () => {
                             }
                         }}
                     />
-
+                    {/* voice recorder */}
+                    <button type="*" className="btn btn-circle btn-ghost text-zinc-500" onClick={handleStartRecording}>
+                        <Mic size={20} />
+                    </button>
                     {/* Send Button */}
                     <button type="submit" className="btn btn-circle" disabled={!text.trim() && !file}>
                         <Send size={20} />
