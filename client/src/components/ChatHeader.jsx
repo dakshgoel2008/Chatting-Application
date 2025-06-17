@@ -10,9 +10,8 @@ const ChatHeader = () => {
 
     // Typing indicator state
     const [isTyping, setIsTyping] = useState(false);
-    const [typingTimeout, setTypingTimeout] = useState(null);
 
-    // Listen for typing events from socket
+    // Listening for typing events from socket
     useEffect(() => {
         if (!socket || !selectedUser) return;
 
@@ -20,18 +19,6 @@ const ChatHeader = () => {
             // Only show typing indicator if it's from the selected user
             if (data.userId === selectedUser._id) {
                 setIsTyping(true);
-
-                // Clear existing timeout
-                if (typingTimeout) {
-                    clearTimeout(typingTimeout);
-                }
-
-                // Set new timeout to hide typing indicator after 3 seconds
-                const timeout = setTimeout(() => {
-                    setIsTyping(false);
-                }, 3000);
-
-                setTypingTimeout(timeout);
             }
         };
 
@@ -39,10 +26,6 @@ const ChatHeader = () => {
             // Hide typing indicator immediately when user stops typing
             if (data.userId === selectedUser._id) {
                 setIsTyping(false);
-                if (typingTimeout) {
-                    clearTimeout(typingTimeout);
-                    setTypingTimeout(null);
-                }
             }
         };
 
@@ -52,24 +35,17 @@ const ChatHeader = () => {
 
         // Cleanup function
         return () => {
-            if (typingTimeout) {
-                clearTimeout(typingTimeout);
-            }
             socket.off("user-typing", handleUserTyping);
             socket.off("user-stopped-typing", handleUserStoppedTyping);
         };
-    }, [socket, selectedUser, typingTimeout]);
+    }, [socket, selectedUser]);
 
-    // Cleanup timeout when component unmounts or selectedUser changes
+    // Reset typing state when selectedUser changes
     useEffect(() => {
-        return () => {
-            if (typingTimeout) {
-                clearTimeout(typingTimeout);
-            }
-            setIsTyping(false);
-        };
+        setIsTyping(false);
     }, [selectedUser]);
 
+    // check for online users.
     const isOnline = onlineUsers.includes(selectedUser._id);
 
     // Get user status text
@@ -82,21 +58,36 @@ const ChatHeader = () => {
     // Handle dropdown menu actions
     const handleCallUser = () => {
         console.log("Calling user:", selectedUser.name);
-        // Implement call functionality
+        // Will implement call functionality
+        alert("Demo: Calling user...");
     };
 
     const handleVideoCall = () => {
         console.log("Video calling user:", selectedUser.name);
-        // Implement video call functionality
+        // Will Implement video call functionality
+        alert("Demo: Video calling user...");
     };
 
     const handleViewProfile = () => {
         console.log("Viewing profile:", selectedUser.name);
         // Navigate to user profile or show profile modal
+        alert("Demo: Viewing profile...");
+    };
+
+    const handleMuteNotifications = () => {
+        console.log("Muting notifications for:", selectedUser.name);
+        // Will implement mute notifications functionality
+        alert("Demo: Muting notifications...");
+    };
+
+    const handleBlockUser = () => {
+        console.log("Blocking user:", selectedUser.name);
+        // Will implement block user functionality
+        alert("Demo: Blocking user...");
     };
 
     return (
-        <div className="p-3 border-b border-base-300 bg-base-100/80 backdrop-blur-sm">
+        <div className="p-3 border-b border-base-300 bg-base-100/80 backdrop-blur-sm relative z-50">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     {/* Avatar with online indicator */}
@@ -145,7 +136,7 @@ const ChatHeader = () => {
                     </div>
                 </div>
 
-                {/* Action buttons */}
+                {/*TODO: Action buttons */}
                 <div className="flex items-center gap-1">
                     {/* Call button */}
                     <button
@@ -166,7 +157,7 @@ const ChatHeader = () => {
                     </button>
 
                     {/* More options dropdown */}
-                    <div className="dropdown dropdown-end">
+                    <div className="dropdown dropdown-end relative">
                         <div
                             tabIndex={0}
                             role="button"
@@ -177,7 +168,7 @@ const ChatHeader = () => {
                         </div>
                         <ul
                             tabIndex={0}
-                            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
+                            className="dropdown-content menu bg-base-100 rounded-box z-[9999] w-52 p-2 shadow-xl border border-base-300"
                         >
                             <li>
                                 <button onClick={handleViewProfile} className="flex items-center gap-2">
@@ -186,13 +177,16 @@ const ChatHeader = () => {
                                 </button>
                             </li>
                             <li>
-                                <button className="flex items-center gap-2 text-warning">
+                                <button
+                                    className="flex items-center gap-2 text-warning"
+                                    onClick={handleMuteNotifications}
+                                >
                                     <span className="w-4 h-4 flex items-center justify-center">🔇</span>
                                     Mute Notifications
                                 </button>
                             </li>
                             <li>
-                                <button className="flex items-center gap-2 text-error">
+                                <button className="flex items-center gap-2 text-error" onClick={handleBlockUser}>
                                     <span className="w-4 h-4 flex items-center justify-center">🚫</span>
                                     Block User
                                 </button>

@@ -1,3 +1,4 @@
+// just a better ui for frontpage thats it.😎
 import { MessageSquare, Users, Zap, Shield, Heart } from "lucide-react";
 import ChatLogo from "./ChatLogo";
 

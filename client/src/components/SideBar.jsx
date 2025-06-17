@@ -14,26 +14,52 @@ const SideBar = () => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [sortBy, setSortBy] = useState("name");
 
-    // Cache to store last messages for each user to prevent flickering
+    // TODO: have to Improve conversation cache
     const [conversationCache, setConversationCache] = useState({});
     const [loadingUser, setLoadingUser] = useState(null);
+    const [lastSelectedUserId, setLastSelectedUserId] = useState(null);
 
     useEffect(() => {
         getUsers();
     }, [getUsers]);
 
-    // Update conversation cache when messages change
+    // Clear cache for previous user when switching to prevent overlap
     useEffect(() => {
-        if (selectedUser && message && Array.isArray(message) && message.length > 0) {
-            const lastMessage = message[message.length - 1];
-            setConversationCache((prev) => ({
-                ...prev,
-                [selectedUser._id]: {
-                    lastMessage,
-                    messageCount: message.length,
-                    updatedAt: new Date().toISOString(),
-                },
-            }));
+        if (selectedUser && lastSelectedUserId && selectedUser._id !== lastSelectedUserId) {
+            // Clear the loading state for all users when switching
+            setLoadingUser(null);
+        }
+        if (selectedUser) {
+            setLastSelectedUserId(selectedUser._id);
+        }
+    }, [selectedUser, lastSelectedUserId]);
+
+    // Update conversation cache only for the currently selected user
+    useEffect(() => {
+        if (selectedUser && message && Array.isArray(message)) {
+            if (message.length > 0) {
+                const lastMessage = message[message.length - 1];
+                setConversationCache((prev) => ({
+                    ...prev,
+                    [selectedUser._id]: {
+                        lastMessage,
+                        messageCount: message.length,
+                        updatedAt: new Date().toISOString(),
+                        hasMessages: true,
+                    },
+                }));
+            } else {
+                // If no messages, mark as having no messages
+                setConversationCache((prev) => ({
+                    ...prev,
+                    [selectedUser._id]: {
+                        lastMessage: null,
+                        messageCount: 0,
+                        updatedAt: new Date().toISOString(),
+                        hasMessages: false,
+                    },
+                }));
+            }
         }
     }, [selectedUser, message]);
 
@@ -54,7 +80,7 @@ const SideBar = () => {
         return () => clearTimeout(delayDebounce);
     }, [searchedInput]);
 
-    // Improved function to get last message for user
+    // Improved function to get last message for user with better state management
     const getLastMessageForUser = useCallback(
         (userId) => {
             // If this is the currently selected user and we have messages, use them
@@ -62,15 +88,39 @@ const SideBar = () => {
                 return message[message.length - 1];
             }
 
-            // Otherwise, check cache
-            const cachedConversation = conversationCache[userId];
-            if (cachedConversation?.lastMessage) {
-                return cachedConversation.lastMessage;
+            // If this is the currently selected user but no messages, return null
+            if (selectedUser?._id === userId && message && Array.isArray(message) && message.length === 0) {
+                return null;
             }
 
+            // For non-selected users, check cache
+            const cachedConversation = conversationCache[userId];
+            if (cachedConversation) {
+                // Only return cached message if it exists and hasMessages is true
+                if (cachedConversation.hasMessages && cachedConversation.lastMessage) {
+                    return cachedConversation.lastMessage;
+                }
+                // If hasMessages is false, return null
+                if (cachedConversation.hasMessages === false) {
+                    return null;
+                }
+            }
+
+            // Return null for users we haven't loaded yet
             return null;
         },
         [selectedUser, message, conversationCache]
+    );
+
+    // Check if we have conversation data for a user
+    const hasConversationData = useCallback(
+        (userId) => {
+            if (selectedUser?._id === userId) {
+                return true; // We always have current data for selected user
+            }
+            return conversationCache[userId] !== undefined;
+        },
+        [selectedUser, conversationCache]
     );
 
     // Memoized filtered and sorted users
@@ -105,19 +155,22 @@ const SideBar = () => {
         (userId) => {
             // Show loading state if this user is being loaded
             if (loadingUser === userId) {
-                return "Loading...";
+                return "Loading messages...";
+            }
+
+            // Check if we have conversation data for this user
+            if (!hasConversationData(userId)) {
+                return "Tap to load messages";
             }
 
             const lastMsg = getLastMessageForUser(userId);
+
+            // If no last message but we have conversation data, it means no messages exist
             if (!lastMsg) {
-                // Check if we have any cached data for this user
-                const cached = conversationCache[userId];
-                if (cached) {
-                    return "Tap to view messages";
-                }
                 return "No messages yet";
             }
 
+            // Handle file messages
             if (lastMsg.file) {
                 if (lastMsg.file.match(/\.(jpeg|png|gif|jpg)$/i)) return "📷 Photo";
                 if (lastMsg.file.match(/\.(mp4|webm|ogg)$/i)) return "🎥 Video";
@@ -127,9 +180,14 @@ const SideBar = () => {
                 return "📎 File";
             }
 
-            return lastMsg.text?.length > 30 ? `${lastMsg.text.substring(0, 30)}...` : lastMsg.text || "No message";
+            // Handle text messages
+            if (lastMsg.text) {
+                return lastMsg.text.length > 30 ? `${lastMsg.text.substring(0, 30)}...` : lastMsg.text;
+            }
+
+            return "Message";
         },
-        [getLastMessageForUser, conversationCache, loadingUser]
+        [getLastMessageForUser, hasConversationData, loadingUser]
     );
 
     const getMessageTime = useCallback(
@@ -150,21 +208,35 @@ const SideBar = () => {
         [getLastMessageForUser]
     );
 
-    // Handle user selection with loading state
+    // Handle user selection with improved loading state management
     const handleUserSelect = useCallback(
         async (user) => {
             if (selectedUser?._id === user._id) return; // Already selected
 
-            setLoadingUser(user._id);
+            // Set loading state only if we don't have cached data
+            if (!hasConversationData(user._id)) {
+                setLoadingUser(user._id);
+            }
+
             setSelectedUser(user);
 
-            // Clear loading state after a short delay (or when messages load)
-            setTimeout(() => {
+            // Clear loading state after messages are expected to load
+            const timeout = setTimeout(() => {
                 setLoadingUser(null);
-            }, 1000);
+            }, 2000); // Increased timeout for better UX
+
+            // Cleanup timeout if component unmounts
+            return () => clearTimeout(timeout);
         },
-        [selectedUser, setSelectedUser]
+        [selectedUser, setSelectedUser, hasConversationData]
     );
+
+    // Clear loading state when messages load for the selected user
+    useEffect(() => {
+        if (selectedUser && loadingUser === selectedUser._id && message !== undefined) {
+            setLoadingUser(null);
+        }
+    }, [selectedUser, loadingUser, message]);
 
     // Close filter dropdown when clicking outside
     useEffect(() => {
@@ -299,6 +371,7 @@ const SideBar = () => {
                             const isSelected = selectedUser?._id === user._id;
                             const lastMsgTime = getMessageTime(user._id);
                             const isLoading = loadingUser === user._id;
+                            const hasData = hasConversationData(user._id);
 
                             return (
                                 <button
@@ -347,7 +420,15 @@ const SideBar = () => {
                                             )}
                                         </div>
                                         <div className="flex items-center justify-between">
-                                            <p className="text-sm text-base-content/60 truncate">
+                                            <p
+                                                className={`text-sm truncate ${
+                                                    !hasData
+                                                        ? "text-base-content/40 italic"
+                                                        : isLoading
+                                                        ? "text-base-content/40"
+                                                        : "text-base-content/60"
+                                                }`}
+                                            >
                                                 {getLastMessagePreview(user._id)}
                                             </p>
                                             <div className="flex items-center gap-1 flex-shrink-0 ml-2">

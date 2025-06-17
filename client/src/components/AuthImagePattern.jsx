@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+// TODO: I will improve it later
+// wait for adding the app features that I will definately integrate maybe this year.🫡🫡
+import { useState, useEffect } from "react";
 import { Smartphone, Users, Shield, Clock, Zap, MessageCircle, Phone, Video, Share } from "lucide-react";
 import ChatLogo from "./ChatLogo";
 const EnhancedAuthComponent = () => {
@@ -30,6 +32,7 @@ const EnhancedAuthComponent = () => {
         },
     ];
 
+    // just dummy steps for now.
     const steps = [
         "Open WhatsUp on your phone",
         "Tap Menu → Linked Devices",
@@ -191,6 +194,7 @@ const EnhancedAuthComponent = () => {
                     </div>
                 </div>
 
+                {/*TODO: dummy botton stats -> will be improved when project is introduced to real world */}
                 {/* Bottom Stats/Features
                 <div className="mt-8 pt-6 border-t border-gray-200">
                     <div className="grid grid-cols-4 gap-4 text-center">

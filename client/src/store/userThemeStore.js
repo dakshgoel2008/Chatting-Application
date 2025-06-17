@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export const useThemeStore = create((set) => ({
     theme: (() => {
-        const initialTheme = localStorage.getItem("chat-theme") || "coffee";
+        const initialTheme = localStorage.getItem("chat-theme") || "system-default";
         if (typeof document !== "undefined") {
             document.documentElement.setAttribute("data-theme", initialTheme);
         }

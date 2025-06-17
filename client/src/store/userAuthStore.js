@@ -130,7 +130,7 @@ export const useUserAuthStore = create((set, get) => ({
         } catch (err) {
             console.log("Delete Account error:", err);
 
-            // Handle specific error cases
+            // Handling specific error cases -> used GPT for better error handling 😁😁
             let errorMessage = "Delete Account failed. Please try again.";
 
             if (err?.response?.status === 401) {
@@ -168,6 +168,7 @@ export const useUserAuthStore = create((set, get) => ({
             set({ onlineUsers: users });
         });
     },
+    // bro disconnect also.
     disconnectSocket: () => {
         if (get().socket?.connected) get().socket.disconnect();
     },

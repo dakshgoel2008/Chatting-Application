@@ -1,3 +1,6 @@
+// will improve it later accordingly
+// though the logo is looking good.
+// will be glad to have some suggestions from you.😇😇
 const ChatLogo = ({ size = "regular", className = "", onClick = null }) => {
     // Size configurations
     const sizeConfig = {

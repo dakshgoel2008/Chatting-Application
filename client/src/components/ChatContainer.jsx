@@ -10,7 +10,7 @@ import { formatMessageTime } from "../lib/utils";
 const FileAttachment = memo(({ file }) => {
     const renderFileContent = useMemo(() => {
         if (!file) return null;
-
+        // TODO: have to improve them it is annoying currently.
         // Image files
         if (file.match(/\.(jpeg|png|gif|jpg)$/i)) {
             return (
@@ -116,28 +116,30 @@ const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) =
     const isOwnMessage = message.senderId === user._id;
     const senderInfo = isOwnMessage ? user : selectedUser;
 
-    const handleImageError = useCallback((e) => {
-        e.target.src = "/default-avatar.png"; // Fallback avatar
-    }, []);
-
     return (
         <div className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`} ref={isLast ? messageRef : null}>
+            {/* profile image */}
             <div className="chat-image avatar">
                 <div className="size-10 rounded-full border overflow-hidden bg-gray-200">
                     <img
-                        src={senderInfo?.profileImage || "/default-avatar.png"}
+                        src={senderInfo?.profileImage}
                         alt={`${senderInfo?.name || "User"}'s profile`}
                         className="w-full h-full object-cover"
-                        onError={handleImageError}
                     />
                 </div>
             </div>
 
+            {/* time formatting */}
             <div className="chat-header mb-1">
                 <time className="text-xs opacity-50 ml-1">{formatMessageTime(message.createdAt)}</time>
             </div>
 
-            <div className="chat-bubble flex flex-col max-w-xs sm:max-w-md">
+            {/* color scheme for messages */}
+            <div
+                className={`chat-bubble flex flex-col max-w-xs sm:max-w-md ${
+                    isOwnMessage ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-800"
+                }`}
+            >
                 <FileAttachment file={message.file} />
                 {message.text && <p className="whitespace-pre-wrap break-words">{message.text}</p>}
             </div>
@@ -145,22 +147,23 @@ const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) =
     );
 });
 
-MessageItem.displayName = "MessageItem";
+MessageItem.displayName = "MessageItem"; // for updating the dev tool to show me same name as I mentioned here.
 
 // Empty state component
+// only re-renders if any change in the props.
 const EmptyState = memo(() => (
     <div className="flex-1 flex items-center justify-center text-gray-500 p-8">
         <div className="text-center">
-            <div className="text-4xl mb-4">💬</div>
             <p className="text-lg font-medium mb-2">No messages yet</p>
             <p className="text-sm opacity-75">Start a conversation!</p>
+            <p className="text-md opacity-75 mt-12 italic">Your messages are end to end encrypted</p>
         </div>
     </div>
 ));
 
-EmptyState.displayName = "EmptyState";
+EmptyState.displayName = "EmptyState"; // for updating the dev tool to show me same name as I mentioned here.
 
-// Error boundary for message rendering
+// Error boundary for message rendering -> Just for better error handling (showoff😁)
 const MessageListErrorBoundary = ({ children, fallback }) => {
     try {
         return children;
@@ -188,9 +191,12 @@ const ChatContainer = memo(() => {
     const messageEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
 
-    // Memoize the scroll to bottom function
+    // TODO: Memoize the scroll to bottom function -> can be improved later.
+    // useCallback -> just a hook bro for memoisation.
+    // just to prevent recreation of scrollToBottom on every render -> as it may become annoying if user wants to scroll up and it automatically scrolls down.
     const scrollToBottom = useCallback(() => {
         if (messageEndRef.current) {
+            // using the current messgae time for scrolling.
             messageEndRef.current.scrollIntoView({
                 behavior: "smooth",
                 block: "end",
@@ -201,19 +207,19 @@ const ChatContainer = memo(() => {
     // Handle message fetching and subscription
     useEffect(() => {
         if (selectedUser?._id && getMessages) {
-            getMessages(selectedUser._id);
+            getMessages(selectedUser._id); // getting all the messages of the user.
 
             if (subscribeToMessages) {
-                subscribeToMessages();
+                subscribeToMessages(); // listening with deep ears for new messages😁
             }
         }
 
         return () => {
             if (unSubscribeToMessages) {
-                unSubscribeToMessages();
+                unSubscribeToMessages(); // if user suddenly changes just stop hearing new messages
             }
         };
-    }, [selectedUser?._id, getMessages, subscribeToMessages, unSubscribeToMessages]);
+    }, [selectedUser?._id, getMessages, subscribeToMessages, unSubscribeToMessages]); // will automatically render on changes. // TODO: may be improved later
 
     // Auto-scroll when new messages arrive
     useEffect(() => {
@@ -243,6 +249,7 @@ const ChatContainer = memo(() => {
     }, [message, user, selectedUser]);
 
     // Loading state with consistent layout
+    // nothing but just a enhanced loading state for messages.
     if (isMessageLoading) {
         return (
             <div className="flex-1 flex flex-col h-full">
@@ -290,6 +297,6 @@ const ChatContainer = memo(() => {
     );
 });
 
-ChatContainer.displayName = "ChatContainer";
+ChatContainer.displayName = "ChatContainer"; // for issue of memo it was showing me Memo() Anonymous like thing.This solved the issue 😁
 
 export default ChatContainer;
