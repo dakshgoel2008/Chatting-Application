@@ -150,10 +150,10 @@ const ChatHeader = () => {
                     {/* Video call button */}
                     <button
                         onClick={handleVideoCall}
-                        className="p-2 rounded-full hover:bg-base-200 transition-colors"
+                        className="p-2 rounded-full hover:bg-base-200 transition-colors "
                         title="Video Call"
                     >
-                        <Video className="w-5 h-5 text-base-content/70 hover:text-base-content transition-colors" />
+                        <Video className="w-5 h-5 text-base-content/70 hover:text-base-content  transition-colors" />
                     </button>
 
                     {/* More options dropdown */}

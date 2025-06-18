@@ -129,19 +129,19 @@ const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) =
                 </div>
             </div>
 
-            {/* time formatting */}
-            <div className="chat-header mb-1">
-                <time className="text-xs opacity-50 ml-1">{formatMessageTime(message.createdAt)}</time>
-            </div>
-
             {/* color scheme for messages */}
             <div
-                className={`chat-bubble flex flex-col max-w-xs sm:max-w-md ${
-                    isOwnMessage ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-800"
+                className={`relative chat-bubble flex flex-col max-w-xs sm:max-w-md rounded-2xl px-4 py-2 shadow-xl ${
+                    isOwnMessage ? "bg-[#bed2ef] text-gray-900" : "bg-[#ffeeab] text-black border "
                 }`}
             >
                 <FileAttachment file={message.file} />
                 {message.text && <p className="whitespace-pre-wrap break-words">{message.text}</p>}
+
+                {/* Time formatting */}
+                <span className="text-[12px] text-slate-500 mt-1 ml-auto opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+                    {formatMessageTime(message.createdAt)}
+                </span>
             </div>
         </div>
     );

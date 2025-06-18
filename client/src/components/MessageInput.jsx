@@ -1,19 +1,32 @@
 import { useState, useRef, useEffect } from "react";
-import { Mic, Paperclip, Send, X } from "lucide-react";
+import { Mic, Paperclip, Send, Smile, X } from "lucide-react";
 import { useUserChatStore } from "../store/userChatStore";
 import { useUserAuthStore } from "../store/userAuthStore";
 import TextareaAutosize from "react-textarea-autosize";
-
+import { getFileIcon } from "../constants/messageInputHelper";
+import { formatFileSize } from "../lib/utils";
+// Import emoji-mart components
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 const MessageInput = () => {
     const [text, setText] = useState("");
     const [file, setFile] = useState(null);
     const [fileType, setFileType] = useState(null); // image, audio, file
     const [previewURL, setPreviewURL] = useState(null);
-    // just for better user experience so as to show him also as of he is typing or what will be seen by the receiver side.
-    // TODO: may be I will remove this. Dunno.
     const [isTyping, setIsTyping] = useState(false);
 
+    // for audios recordings:
+    const [isRecording, setIsRecording] = useState(false);
+    const [audioChunks, setAudioChunks] = useState([]);
+    const [mediaRecorder, setMediaRecorder] = useState(null);
+    const audioStreamRef = useRef(null);
+
+    // for emoji picker and GIF and stickers
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
     const inputRef = useRef(null);
+    const textareaRef = useRef(null);
+    const emojiPickerRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
 
@@ -24,7 +37,6 @@ const MessageInput = () => {
     const startTyping = () => {
         if (!socket || !selectedUser || !user) return;
 
-        // Only emit if not already typing
         if (!isTypingRef.current) {
             socket.emit("typing-start", {
                 userId: user._id,
@@ -36,12 +48,10 @@ const MessageInput = () => {
             console.log("Started typing to:", selectedUser.name);
         }
 
-        // Clear existing timeout
         if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
         }
 
-        // Set timeout to stop typing after 1 second of inactivity
         typingTimeoutRef.current = setTimeout(() => {
             stopTyping();
         }, 1000);
@@ -100,7 +110,6 @@ const MessageInput = () => {
         const value = e.target.value;
         setText(value);
 
-        // Start typing indicator when user types
         if (value.trim()) {
             startTyping();
         } else {
@@ -112,7 +121,6 @@ const MessageInput = () => {
         e.preventDefault();
         if (!text.trim() && !file) return;
 
-        // Stop typing before sending message
         stopTyping();
 
         const formData = new FormData();
@@ -120,25 +128,131 @@ const MessageInput = () => {
         if (file) formData.append("file", file);
         await sendMessage(formData);
 
-        // Reset
         setText("");
         removeAttachment();
+        setShowEmojiPicker(false); // Close emoji picker after sending
     };
 
-    // recording:
-    const handleStartRecording = () => {
+    const handleStartRecording = async () => {
+        if (isRecording && mediaRecorder) {
+            mediaRecorder.stop(); // This will trigger `onstop`
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioStreamRef.current = stream;
+
+            const recorder = new MediaRecorder(stream);
+            setMediaRecorder(recorder);
+            setAudioChunks([]);
+            setIsRecording(true);
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    setAudioChunks((prev) => [...prev, e.data]);
+                }
+            };
+
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: "audio/webm" });
+                const audioURL = URL.createObjectURL(blob);
+
+                // Store it as file for sending
+                const audioFile = new File([blob], "voice-message.webm", {
+                    type: "audio/webm",
+                });
+
+                setFile(audioFile);
+                setFileType("audio");
+                setPreviewURL(audioURL);
+
+                // Stop stream
+                if (audioStreamRef.current) {
+                    audioStreamRef.current.getTracks().forEach((track) => track.stop());
+                }
+
+                setIsRecording(false);
+            };
+
+            recorder.start();
+        } catch (err) {
+            console.error("Microphone access denied or error:", err);
+            alert("Please allow microphone access to record voice messages.");
+        }
+    };
+
+    // Updated emoji handler
+    const emojiHandler = () => {
+        setShowEmojiPicker(!showEmojiPicker);
+    };
+
+    // Handle emoji selection
+    const onEmojiSelect = (emoji) => {
+        const cursorPosition = textareaRef.current?.selectionStart || text.length;
+        const textBefore = text.substring(0, cursorPosition);
+        const textAfter = text.substring(cursorPosition);
+        const newText = textBefore + emoji.native + textAfter;
+
+        setText(newText);
+
+        // Focus back to textarea and set cursor position
         setTimeout(() => {
-            alert("Demo: Later I will be implementing recording of the audio message in this");
-        }, 500);
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+                const newCursorPosition = cursorPosition + emoji.native.length;
+                textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+            }
+        }, 0);
     };
 
-    // Handle input blur (when user clicks away) -> (just showoff😎)
+    const formatText = (type) => {
+        if (!textareaRef.current) return;
+
+        const textarea = textareaRef.current;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = text.slice(start, end);
+
+        let wrapper = "";
+        if (type === "bold") wrapper = "**";
+        if (type === "italic") wrapper = "_";
+        if (type === "underline") wrapper = "__";
+
+        const formatted = wrapper + selectedText + wrapper;
+        const newText = text.slice(0, start) + formatted + text.slice(end);
+
+        setText(newText);
+
+        // Re-focus and place cursor properly
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + wrapper.length, end + wrapper.length);
+        }, 0);
+    };
+
     const handleBlur = () => {
-        // Small delay to allow for form submission
         setTimeout(() => {
             stopTyping();
         }, 100);
     };
+
+    // Close emoji picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        if (showEmojiPicker) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showEmojiPicker]);
 
     // Cleanup on component unmount or selectedUser change
     useEffect(() => {
@@ -156,44 +270,17 @@ const MessageInput = () => {
         };
     }, []);
 
-    // TODO: have to make it compatible to all types of files -> will improve it later.
-    const getFileIcon = (filename) => {
-        if (!filename) return "📄";
-
-        const ext = filename.split(".").pop()?.toLowerCase();
-        const iconMap = {
-            pdf: "📕",
-            doc: "📘",
-            docx: "📘",
-            ppt: "📙",
-            pptx: "📙",
-            xls: "📗",
-            xlsx: "📗",
-            txt: "📝",
-            zip: "🗜️",
-            rar: "🗜️",
-            mp3: "🎵",
-            wav: "🎵",
-            flac: "🎵",
-            mp4: "🎬",
-            avi: "🎬",
-            mov: "🎬",
-            jpg: "🖼️",
-            jpeg: "🖼️",
-            png: "🖼️",
-            gif: "🖼️",
+    // Cleanup media recorder on unmount
+    useEffect(() => {
+        return () => {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+            if (audioStreamRef.current) {
+                audioStreamRef.current.getTracks().forEach((track) => track.stop());
+            }
         };
-
-        return iconMap[ext] || "📄";
-    };
-
-    const formatFileSize = (bytes) => {
-        if (bytes === 0) return "0 B";
-        const k = 1024;
-        const sizes = ["B", "KB", "MB", "GB"];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
-    };
+    }, []);
 
     return (
         <div className="p-4 w-full border-t border-zinc-700 bg-base-100">
@@ -259,7 +346,6 @@ const MessageInput = () => {
                             </div>
                         )}
 
-                        {/* Enhanced Remove Button */}
                         <button
                             onClick={removeAttachment}
                             type="button"
@@ -269,12 +355,33 @@ const MessageInput = () => {
                             <X size={14} className="group-hover/btn:rotate-90 transition-transform duration-200" />
                         </button>
 
-                        {/* File size indicator for images */}
                         {fileType === "image" && file?.size && (
                             <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full text-xs text-white">
                                 {formatFileSize(file.size)}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
+                <div
+                    ref={emojiPickerRef}
+                    className="fixed bottom-20 left-15 z-[9999] animate-in slide-in-from-bottom-4 duration-100"
+                    style={{ zIndex: 9999 }}
+                >
+                    <div className="shadow-2xl rounded-lg overflow-hidden border border-zinc-600">
+                        <Picker
+                            data={data}
+                            onEmojiSelect={onEmojiSelect}
+                            theme="dark"
+                            set="native"
+                            showPreview={true}
+                            showSkinTones={true}
+                            emojiSize={26}
+                            perLine={12}
+                            maxFrequentRows={2}
+                        />
                     </div>
                 </div>
             )}
@@ -291,17 +398,31 @@ const MessageInput = () => {
                         onChange={handleFileChange}
                     />
 
+                    {/* Emoji Button */}
+                    <button
+                        type="button"
+                        className={`btn btn-circle btn-ghost transition-colors duration-200 ${
+                            showEmojiPicker ? "text-yellow-400 bg-yellow-400/10" : "text-zinc-500 hover:text-yellow-400"
+                        }`}
+                        onClick={emojiHandler}
+                        title="Add emoji"
+                    >
+                        <Smile size={20} />
+                    </button>
+
                     {/* Attach Button */}
                     <button
                         type="button"
                         className="btn btn-circle btn-ghost text-zinc-500 hover:text-white"
                         onClick={() => inputRef.current?.click()}
+                        title="Attach file"
                     >
                         <Paperclip size={20} />
                     </button>
 
                     {/* Text Input */}
                     <TextareaAutosize
+                        ref={textareaRef}
                         minRows={1}
                         maxRows={5}
                         className="flex-1 resize-none bg-base-200 rounded-xl p-3 text-sm placeholder-zinc-400 focus:outline-none"
@@ -314,14 +435,52 @@ const MessageInput = () => {
                                 e.preventDefault();
                                 handleSend(e);
                             }
+                            // Close emoji picker on Escape
+                            if (e.key === "Escape") {
+                                setShowEmojiPicker(false);
+                            }
+
+                            // GBoard rich features.
+
+                            // Bold: Ctrl+B or Cmd+B
+                            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+                                e.preventDefault();
+                                formatText("bold");
+                            }
+
+                            // Italic: Ctrl+I or Cmd+I
+                            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "i") {
+                                e.preventDefault();
+                                formatText("italic");
+                            }
+
+                            // Underline: Ctrl+U or Cmd+U
+                            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "u") {
+                                e.preventDefault();
+                                formatText("underline");
+                            }
                         }}
                     />
-                    {/* voice recorder */}
-                    <button type="*" className="btn btn-circle btn-ghost text-zinc-500" onClick={handleStartRecording}>
+
+                    {/* Voice recorder */}
+                    <button
+                        type="button"
+                        onClick={handleStartRecording}
+                        className={`btn btn-circle btn-ghost transition-all duration-200 ${
+                            isRecording ? "text-red-500 animate-pulse" : "text-zinc-500 hover:text-white"
+                        }`}
+                        title={isRecording ? "Stop recording" : "Record voice message"}
+                    >
                         <Mic size={20} />
                     </button>
+
                     {/* Send Button */}
-                    <button type="submit" className="btn btn-circle" disabled={!text.trim() && !file}>
+                    <button
+                        type="submit"
+                        className="btn btn-circle"
+                        disabled={!text.trim() && !file}
+                        title="Send message"
+                    >
                         <Send size={20} />
                     </button>
                 </form>
