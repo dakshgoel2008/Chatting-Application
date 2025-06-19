@@ -8,6 +8,7 @@ import { formatFileSize } from "../lib/utils";
 // Import emoji-mart components
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
+
 const MessageInput = () => {
     const [text, setText] = useState("");
     const [file, setFile] = useState(null);
@@ -77,6 +78,8 @@ const MessageInput = () => {
         }
     };
 
+    // Eventbutton handlers.
+
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
         if (!selected) return;
@@ -134,12 +137,14 @@ const MessageInput = () => {
     };
 
     const handleStartRecording = async () => {
+        // Stop previous recording
         if (isRecording && mediaRecorder) {
             mediaRecorder.stop(); // This will trigger `onstop`
             return;
         }
 
         try {
+            // start recording
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             audioStreamRef.current = stream;
 
@@ -149,12 +154,14 @@ const MessageInput = () => {
             setIsRecording(true);
 
             recorder.ondataavailable = (e) => {
+                // if data is given by user update the audio chunks
                 if (e.data.size > 0) {
                     setAudioChunks((prev) => [...prev, e.data]);
                 }
             };
 
             recorder.onstop = () => {
+                // convert this to blob -> binary data (here audio)
                 const blob = new Blob(audioChunks, { type: "audio/webm" });
                 const audioURL = URL.createObjectURL(blob);
 
@@ -189,35 +196,48 @@ const MessageInput = () => {
 
     // Handle emoji selection
     const onEmojiSelect = (emoji) => {
+        // start from where ended typing
         const cursorPosition = textareaRef.current?.selectionStart || text.length;
+        // can add text before or after the emojis
         const textBefore = text.substring(0, cursorPosition);
         const textAfter = text.substring(cursorPosition);
+        // updating the new text thats it.
         const newText = textBefore + emoji.native + textAfter;
 
         setText(newText);
 
         // Focus back to textarea and set cursor position
-        setTimeout(() => {
-            if (textareaRef.current) {
-                textareaRef.current.focus();
-                const newCursorPosition = cursorPosition + emoji.native.length;
-                textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
-            }
-        }, 0);
+        if (textareaRef.current) {
+            textareaRef.current.focus(); // just for user experience
+            // I want user should be able to type and see emojis to put parallely that's it.
+            const newCursorPosition = cursorPosition + emoji.native.length;
+            textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+        }
     };
 
     const formatText = (type) => {
+        // if not using the textarea then return -> kind of error handler
         if (!textareaRef.current) return;
 
-        const textarea = textareaRef.current;
-        const start = textarea.selectionStart;
+        const textarea = textareaRef.current; // select the text area
+        const start = textarea.selectionStart; // get the start and end
         const end = textarea.selectionEnd;
-        const selectedText = text.slice(start, end);
+        const selectedText = text.slice(start, end); // fetching the text from [start, end)
 
         let wrapper = "";
         if (type === "bold") wrapper = "**";
         if (type === "italic") wrapper = "_";
-        if (type === "underline") wrapper = "__";
+        //     if (type === "underline") {
+        //     // Use HTML for underline
+        //     const formatted = `<u>${selectedText}</u>`;
+        //     const newText = text.slice(0, start) + formatted + text.slice(end);
+        //     setText(newText);
+        //     setTimeout(() => {
+        //         textarea.focus();
+        //         textarea.setSelectionRange(start + 3, end + 3); // +3 for <u>
+        //     }, 0);
+        //     return;
+        // }
 
         const formatted = wrapper + selectedText + wrapper;
         const newText = text.slice(0, start) + formatted + text.slice(end);
@@ -225,6 +245,7 @@ const MessageInput = () => {
         setText(newText);
 
         // Re-focus and place cursor properly
+        // if not putting setTimeOut it is not wrapping the data in wrappers -> Dunno why
         setTimeout(() => {
             textarea.focus();
             textarea.setSelectionRange(start + wrapper.length, end + wrapper.length);
@@ -232,6 +253,7 @@ const MessageInput = () => {
     };
 
     const handleBlur = () => {
+        // just user experience
         setTimeout(() => {
             stopTyping();
         }, 100);
@@ -254,6 +276,7 @@ const MessageInput = () => {
         };
     }, [showEmojiPicker]);
 
+    // CLEANUP FUNCTIONS:
     // Cleanup on component unmount or selectedUser change
     useEffect(() => {
         return () => {
@@ -284,7 +307,7 @@ const MessageInput = () => {
 
     return (
         <div className="p-4 w-full border-t border-zinc-700 bg-base-100">
-            {/* Enhanced Preview */}
+            {/* Preview what user is sending */}
             {previewURL && (
                 <div className="mb-3 animate-in slide-in-from-bottom-2 duration-200">
                     <div className="relative inline-block group">
@@ -346,13 +369,14 @@ const MessageInput = () => {
                             </div>
                         )}
 
+                        {/* remove button for file attachment */}
                         <button
                             onClick={removeAttachment}
                             type="button"
                             className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group/btn"
                             title="Remove attachment"
                         >
-                            <X size={14} className="group-hover/btn:rotate-90 transition-transform duration-200" />
+                            <X size={16} className="group-hover/btn:rotate-90 transition-transform duration-200" />
                         </button>
 
                         {fileType === "image" && file?.size && (
@@ -431,6 +455,7 @@ const MessageInput = () => {
                         onChange={handleTextChange}
                         onBlur={handleBlur}
                         onKeyDown={(e) => {
+                            // for sending message on Enter
                             if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
                                 handleSend(e);
@@ -454,11 +479,11 @@ const MessageInput = () => {
                                 formatText("italic");
                             }
 
-                            // Underline: Ctrl+U or Cmd+U
-                            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "u") {
-                                e.preventDefault();
-                                formatText("underline");
-                            }
+                            // // Underline: Ctrl+U or Cmd+U
+                            // if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "u") {
+                            //     e.preventDefault();
+                            //     formatText("underline");
+                            // }
                         }}
                     />
 
@@ -466,8 +491,8 @@ const MessageInput = () => {
                     <button
                         type="button"
                         onClick={handleStartRecording}
-                        className={`btn btn-circle btn-ghost transition-all duration-200 ${
-                            isRecording ? "text-red-500 animate-pulse" : "text-zinc-500 hover:text-white"
+                        className={`btn btn-circle bg-[#bed2ef] text-gray-900 transition-all duration-200 ${
+                            isRecording ? "text-red-600 animate-pulse" : "text-zinc-500 hover:text-white"
                         }`}
                         title={isRecording ? "Stop recording" : "Record voice message"}
                     >
@@ -477,7 +502,7 @@ const MessageInput = () => {
                     {/* Send Button */}
                     <button
                         type="submit"
-                        className="btn btn-circle"
+                        className="btn btn-circle bg-[#bed2ef]"
                         disabled={!text.trim() && !file}
                         title="Send message"
                     >
@@ -487,6 +512,13 @@ const MessageInput = () => {
 
                 {/* Typing indicator for current user */}
                 {isTyping && <div className="absolute -top-6 left-2 text-xs text-primary animate-pulse">typing...</div>}
+
+                {/* recording indicator */}
+                {isRecording && (
+                    <div className="absolute -top-6 left-2 text-md text-red-500 animate-pulse">
+                        Recording... Tap again to stop
+                    </div>
+                )}
             </div>
         </div>
     );

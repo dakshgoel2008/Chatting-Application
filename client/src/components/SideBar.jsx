@@ -4,6 +4,7 @@ import SideBarSkeleton from "./Skeletons/SideBarSkeleton";
 import { Search, Users, X, Filter, MessageCircle, Settings, ChevronDown } from "lucide-react";
 import { useUserAuthStore } from "../store/userAuthStore";
 import { capitaliseWords } from "./../lib/utils";
+import removeMarkdown from "remove-markdown";
 
 const SideBar = () => {
     const { getUsers, selectedUser, setSelectedUser, users, isUsersLoading, message } = useUserChatStore();
@@ -182,7 +183,8 @@ const SideBar = () => {
 
             // Handle text messages
             if (lastMsg.text) {
-                return lastMsg.text.length > 30 ? `${lastMsg.text.substring(0, 30)}...` : lastMsg.text;
+                const cleanText = removeMarkdown(lastMsg.text).replace(/\n/g, " ");
+                return cleanText.length > 30 ? `${cleanText.slice(0, 30)}...` : cleanText;
             }
 
             return "Message";

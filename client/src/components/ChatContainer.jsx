@@ -5,6 +5,7 @@ import ChatHeader from "./ChatHeader";
 import MessageSkeleton from "./Skeletons/MessageSkeleton";
 import { useUserAuthStore } from "../store/userAuthStore";
 import { formatMessageTime } from "../lib/utils";
+import ReactMarkdown from "react-markdown";
 
 // Separate component for file attachments
 const FileAttachment = memo(({ file }) => {
@@ -136,7 +137,11 @@ const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) =
                 }`}
             >
                 <FileAttachment file={message.file} />
-                {message.text && <p className="whitespace-pre-wrap break-words">{message.text}</p>}
+                {message.text && (
+                    <div className="whitespace-pre-wrap break-words">
+                        <ReactMarkdown>{message.text}</ReactMarkdown>
+                    </div>
+                )}
 
                 {/* Time formatting */}
                 <span className="text-[12px] text-slate-500 mt-1 ml-auto opacity-80 group-hover:opacity-100 transition-opacity duration-200">
