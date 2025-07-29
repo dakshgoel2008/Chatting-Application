@@ -19,11 +19,11 @@ const TypingDebugger = () => {
 
         // Listen for typing events
         const handleUserTyping = (data) => {
-            addLog(`🟢 User typing: ${data.userName || data.userId}`);
+            addLog(`User typing: ${data.userName || data.userId}`);
         };
 
         const handleUserStoppedTyping = (data) => {
-            addLog(`🔴 User stopped typing: ${data.userId}`);
+            addLog(`User stopped typing: ${data.userId}`);
         };
 
         socket.on("user-typing", handleUserTyping);
@@ -42,9 +42,9 @@ const TypingDebugger = () => {
                 recipientId: selectedUser._id,
                 userName: user.name,
             });
-            addLog(`📤 Sent typing-start to ${selectedUser.name}`);
+            addLog(`Sent typing-start to ${selectedUser.name}`);
         } else {
-            addLog("❌ Cannot send - missing socket, user, or selectedUser");
+            addLog("Cannot send - missing socket, user, or selectedUser");
         }
     };
 
@@ -54,9 +54,9 @@ const TypingDebugger = () => {
                 userId: user._id,
                 recipientId: selectedUser._id,
             });
-            addLog(`📤 Sent typing-stop to ${selectedUser.name}`);
+            addLog(`Sent typing-stop to ${selectedUser.name}`);
         } else {
-            addLog("❌ Cannot send - missing socket, user, or selectedUser");
+            addLog("Cannot send - missing socket, user, or selectedUser");
         }
     };
 
@@ -75,9 +75,9 @@ const TypingDebugger = () => {
 
             {/* Status */}
             <div className="text-xs space-y-1 mb-3">
-                <div>Socket: {socket ? "✅ Connected" : "❌ Disconnected"}</div>
-                <div>User: {user ? `✅ ${user.name}` : "❌ No user"}</div>
-                <div>Selected: {selectedUser ? `✅ ${selectedUser.name}` : "❌ None"}</div>
+                <div>Socket: {socket ? "Connected" : "❌ Disconnected"}</div>
+                <div>User: {user ? `${user.name}` : "❌ No user"}</div>
+                <div>Selected: {selectedUser ? `${selectedUser.name}` : "❌ None"}</div>
             </div>
 
             {/* Test buttons */}

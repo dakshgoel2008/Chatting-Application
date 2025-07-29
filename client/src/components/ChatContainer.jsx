@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo, useCallback, useMemo } from "react";
+import { useEffect, useRef, memo, useCallback, useMemo, useLayoutEffect } from "react";
 import { useUserChatStore } from "../store/userChatStore";
 import MessageInput from "./MessageInput";
 import ChatHeader from "./ChatHeader";
@@ -6,6 +6,8 @@ import MessageSkeleton from "./Skeletons/MessageSkeleton";
 import { useUserAuthStore } from "../store/userAuthStore";
 import { formatMessageTime } from "../lib/utils";
 import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // Separate component for file attachments
 const FileAttachment = memo(({ file }) => {
@@ -112,6 +114,17 @@ const FileAttachment = memo(({ file }) => {
 
 FileAttachment.displayName = "FileAttachment";
 
+// Emoji Detector:
+function getEmojiCount(text) {
+    const emojiRegex = /\p{Emoji}/gu;
+    return (text.match(emojiRegex) || []).length;
+}
+
+function isOnlyEmojis(text) {
+    const emojiRegex = /^[\p{Emoji}\s]+$/gu;
+    return emojiRegex.test(text);
+}
+
 // Individual message component
 const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) => {
     const isOwnMessage = message.senderId === user._id;
@@ -136,10 +149,46 @@ const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) =
                     isOwnMessage ? "bg-[#bed2ef] text-gray-900" : "bg-[#ffeeab] text-black border "
                 }`}
             >
+                {/* text container  */}
                 <FileAttachment file={message.file} />
                 {message.text && (
-                    <div className="whitespace-pre-wrap break-words">
-                        <ReactMarkdown>{message.text}</ReactMarkdown>
+                    <div
+                        className={(() => {
+                            if (!message.text) return "";
+                            const text = message.text.trim();
+                            if (isOnlyEmojis(text)) {
+                                const count = getEmojiCount(text);
+                                if (count === 1) return "text-6xl"; // single big emoji
+                                if (count <= 3) return "text-3xl"; // few emojis
+                                return "text-xl"; // more emojis
+                            }
+                            return "text-base"; // normal text
+                        })()}
+                    >
+                        <ReactMarkdown
+                            components={{
+                                code({ node, inline, className, children, ...props }) {
+                                    const match = /language-(\w+)/.exec(className || "");
+                                    return !inline && match ? (
+                                        <SyntaxHighlighter
+                                            style={vscDarkPlus}
+                                            language={match[1]}
+                                            PreTag="div"
+                                            wrapLines={true}
+                                            {...props}
+                                        >
+                                            {String(children).replace(/\n$/, "")}
+                                        </SyntaxHighlighter>
+                                    ) : (
+                                        <code className={className} {...props}>
+                                            {children}
+                                        </code>
+                                    );
+                                },
+                            }}
+                        >
+                            {message.text}
+                        </ReactMarkdown>
                     </div>
                 )}
 

@@ -77,11 +77,7 @@ const ProfilePage = () => {
             <div className="max-w-md mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium text-primary">Your Profile</span>
-                    </div>
-                    <h1 className="text-2xl font-bold text-base-content">Manage Your Identity</h1>
+                    <h1 className="text-2xl font-bold text-base-content">Manage Your Profile</h1>
                 </div>
 
                 {/* Profile Card */}
