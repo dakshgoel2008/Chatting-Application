@@ -12,7 +12,6 @@ import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/message.js";
 import { app, server } from "./utils/socket.js";
 
-import path from "path";
 
 // const app = express();       // socket.js {removing duplicacy}
 
