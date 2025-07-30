@@ -12,12 +12,9 @@ import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/message.js";
 import { app, server } from "./utils/socket.js";
 
-
 // const app = express();       // socket.js {removing duplicacy}
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const __dirname2 = path.resolve();
 const PORT = process.env.PORT || 4444;
 
 app.use(express.json({ limit: "50mb" }));
@@ -58,9 +55,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 
 if (process.env.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname2, "../../client/dist")));
+    const __dirname = path.resolve();
+    app.use(express.static(path.join(__dirname, "dist")));
+
     app.get("*", (req, res) => {
-        res.sendFile(path.join(__dirname2, "../../client/dist/index.html"));
+        res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
 }
 
