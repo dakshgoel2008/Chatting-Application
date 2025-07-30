@@ -10,7 +10,7 @@ import { useUserAuthStore } from "./store/userAuthStore";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import Support from "./pages/LegalPages/Support";
-import PrivacyPolicy from "./pages/LegalPages/privacyPolicy";
+import PrivacyPolicy from "./pages/LegalPages/PrivacyPolicy";
 import TermsOfService from "./pages/LegalPages/TermsOfService";
 
 const App = () => {
