@@ -58,13 +58,11 @@ passport.use(
                 }
 
                 const newUser = new User({
-                    name: profile.displayName.toLowerCase(), // Match your schema's lowercase requirement
+                    name: profile.displayName.toLowerCase(),
                     email,
                     profileImage: cloudinaryImage?.secure_url || "",
-                    isGoogleUser: true,
                     googleId: profile.id,
-                    // Don't set username and password for Google users
-                    isEmailVerified: true, // Google emails are pre-verified
+                    isEmailVerified: true,
                 });
 
                 await newUser.save();
@@ -76,16 +74,3 @@ passport.use(
         }
     )
 );
-
-passport.serializeUser((user, done) => {
-    done(null, user._id);
-});
-
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-        done(null, user);
-    } catch (error) {
-        done(error, null);
-    }
-});

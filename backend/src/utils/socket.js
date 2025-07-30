@@ -146,7 +146,6 @@ io.on("connection", (socket) => {
         io.emit("getOnlineUsers", Object.keys(userSocketMap));
     });
 
-    // Optional: Handle manual disconnect/cleanup
     socket.on("force-stop-typing", (data) => {
         const { userId } = data;
         if (userId) {
@@ -155,7 +154,6 @@ io.on("connection", (socket) => {
     });
 });
 
-// Optional: Periodic cleanup of stale typing states (runs every 30 seconds)
 setInterval(() => {
     const now = Date.now();
     const staleThreshold = 30000; // 30 seconds

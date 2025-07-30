@@ -62,7 +62,7 @@ export const uploadDefaultGoogleImageOnCloudinary = async (imageUrl) => {
             public_id: "default_google_image",
             overwrite: true,
         });
-        console.log("Google profile image uploaded:", res.secure_url); // Fixed: was 'response'
+        console.log("Google profile image uploaded:", res.secure_url);
         return res;
     } catch (err) {
         console.error("Error uploading default Google image to Cloudinary", err);

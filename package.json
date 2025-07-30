@@ -1,0 +1,13 @@
+{
+    "name": "chatting-application",
+    "version": "1.0.0",
+    "description": "A MERN based real time chatting web application with clean and responsive UI and some communication features like emoji support, media sharing, text formatting, etc.",
+    "main": "app.js",
+    "scripts": {
+        "build": "npm install --prefix backend && npm install --prefix client && npm run build --prefix client",
+        "start": "npm run start --prefix backend"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}
