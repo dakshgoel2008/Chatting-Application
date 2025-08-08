@@ -30,6 +30,7 @@ const MessageInput = () => {
     const emojiPickerRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
+    const audioChunksRef = useRef([]);
 
     const { sendMessage, selectedUser } = useUserChatStore();
     const { socket, user } = useUserAuthStore();
@@ -151,21 +152,20 @@ const MessageInput = () => {
             const recorder = new MediaRecorder(stream);
             setMediaRecorder(recorder);
             setAudioChunks([]);
+            audioChunksRef.current = [];
             setIsRecording(true);
 
             recorder.ondataavailable = (e) => {
-                // if data is given by user update the audio chunks
                 if (e.data.size > 0) {
+                    audioChunksRef.current.push(e.data);
                     setAudioChunks((prev) => [...prev, e.data]);
                 }
             };
 
             recorder.onstop = () => {
-                // convert this to blob -> binary data (here audio)
-                const blob = new Blob(audioChunks, { type: "audio/webm" });
+                const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
                 const audioURL = URL.createObjectURL(blob);
 
-                // Store it as file for sending
                 const audioFile = new File([blob], "voice-message.webm", {
                     type: "audio/webm",
                 });
@@ -174,12 +174,13 @@ const MessageInput = () => {
                 setFileType("audio");
                 setPreviewURL(audioURL);
 
-                // Stop stream
                 if (audioStreamRef.current) {
                     audioStreamRef.current.getTracks().forEach((track) => track.stop());
                 }
 
                 setIsRecording(false);
+
+                audioChunksRef.current = [];
             };
 
             recorder.start();
