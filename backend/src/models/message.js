@@ -75,6 +75,12 @@ const messageSchema = new Schema(
             type: Boolean,
             default: false,
         },
+        reactions: [
+            {
+                emoji: String,
+                userId: { type: Schema.Types.ObjectId, ref: "User" },
+            },
+        ],
     },
     {
         timestamps: true, // Enable timestamps

@@ -12,128 +12,144 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import MediaModal from "../models/MediaModel.jsx";
 import FileAttachment from "./ChatContainerFeaturesExtensions/FileAttachment.jsx";
+import MessageModal from "./../models/MessageModal";
 
 // Message Item Component
-const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef, appearance, onMediaClick }) => {
-    const isOwnMessage = message.senderId === user._id;
-    const senderInfo = isOwnMessage ? user : selectedUser;
-    const { bubbleStyle, showTimestamps, showAvatars, fontSize } = appearance;
+const MessageItem = memo(
+    ({ message, user, selectedUser, isLast, messageRef, appearance, onMediaClick, onMessageClick }) => {
+        const isOwnMessage = message.senderId === user._id;
+        const senderInfo = isOwnMessage ? user : selectedUser;
+        const { bubbleStyle, showTimestamps, showAvatars, fontSize } = appearance;
 
-    const bubbleClassName = BUBBLE_STYLES.find((style) => style.id === bubbleStyle)?.class || "rounded-2xl";
-    const fontSizeClassName = FONT_SIZES.find((size) => size.id === fontSize)?.class || "text-base";
+        const bubbleClassName = BUBBLE_STYLES.find((style) => style.id === bubbleStyle)?.class || "rounded-2xl";
+        const fontSizeClassName = FONT_SIZES.find((size) => size.id === fontSize)?.class || "text-base";
 
-    // Check for any type of file attachment
-    const fileUrl = message.image || message.video || message.audio || message.file;
-    const hasFileAttachment = Boolean(fileUrl);
-    const hasTextContent = Boolean(message.text?.trim());
+        // Check for any type of file attachment
+        const fileUrl = message.image || message.video || message.audio || message.file;
+        const hasFileAttachment = Boolean(fileUrl);
+        const hasTextContent = Boolean(message.text?.trim());
 
-    // Emoji detector - check if message is only emojis
-    const isEmojiOnly = useMemo(() => {
-        if (!message.text?.trim()) return false;
-        // Remove all emojis and see if anything is left
-        const textWithoutEmojis = message.text
-            .replace(
-                /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
-                ""
-            )
-            .trim();
-        return textWithoutEmojis.length === 0 && message.text.length > 0;
-    }, [message.text]);
+        // Emoji detector - check if message is only emojis
+        const isEmojiOnly = useMemo(() => {
+            if (!message.text?.trim()) return false;
+            // Remove all emojis and see if anything is left
+            const textWithoutEmojis = message.text
+                .replace(
+                    /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+                    ""
+                )
+                .trim();
+            return textWithoutEmojis.length === 0 && message.text.length > 0;
+        }, [message.text]);
 
-    return (
-        <div className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`} ref={isLast ? messageRef : null}>
-            {showAvatars && (
-                <div className="chat-image avatar">
-                    <div className="size-10 rounded-full border overflow-hidden bg-gray-200">
-                        <img
-                            src={senderInfo?.profileImage}
-                            alt={`${senderInfo?.name || "User"}'s profile`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                                e.target.src = "/default-avatar.png"; // Fallback avatar
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
+        return (
             <div
-                className={`relative chat-bubble flex flex-col ${bubbleClassName} shadow-md ${
-                    hasFileAttachment || hasTextContent ? "p-0 overflow-hidden" : "p-4"
-                } ${isOwnMessage ? "bg-[#bed2ef] text-gray-900" : "bg-[#ffeeab] text-black border"} ${
-                    isEmojiOnly ? "bg-transparent !shadow-none" : ""
-                }`}
-                style={{ maxWidth: hasFileAttachment ? "320px" : "400px" }}
+                className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
+                ref={isLast ? messageRef : null}
+                onClick={() => onMessageClick(message)}
             >
-                {/* File attachment rendering */}
-                {hasFileAttachment && (
-                    <div className={hasTextContent ? "mb-2" : ""}>
-                        <FileAttachment file={fileUrl} onMediaClick={onMediaClick} />
+                {showAvatars && (
+                    <div className="chat-image avatar">
+                        <div className="size-10 rounded-full border overflow-hidden bg-gray-200">
+                            <img
+                                src={senderInfo?.profileImage}
+                                alt={`${senderInfo?.name || "User"}'s profile`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.src = "/default-avatar.png"; // Fallback avatar
+                                }}
+                            />
+                        </div>
                     </div>
                 )}
+                <div
+                    className={`relative chat-bubble flex flex-col ${bubbleClassName} shadow-md ${
+                        hasFileAttachment || hasTextContent ? "p-0 overflow-hidden" : "p-4"
+                    } ${isOwnMessage ? "bg-[#bed2ef] text-gray-900" : "bg-[#ffeeab] text-black border"} ${
+                        isEmojiOnly ? "bg-transparent !shadow-none" : ""
+                    }`}
+                    style={{ maxWidth: hasFileAttachment ? "320px" : "400px" }}
+                >
+                    {/* File attachment rendering */}
+                    {hasFileAttachment && (
+                        <div className={hasTextContent ? "mb-2" : ""}>
+                            <FileAttachment file={fileUrl} onMediaClick={onMediaClick} />
+                        </div>
+                    )}
 
-                {/* Text content rendering */}
-                {hasTextContent && (
-                    <div
-                        className={`${isEmojiOnly ? "text-4xl p-2" : `px-4 py-3 ${fontSizeClassName}`} ${
-                            hasFileAttachment ? "pt-0" : ""
-                        }`}
-                    >
-                        <ReactMarkdown
-                            components={{
-                                code({ node, inline, className, children, ...props }) {
-                                    const match = /language-(\w+)/.exec(className || "");
-                                    return !inline && match ? (
-                                        <div className="my-2 rounded-md overflow-hidden">
-                                            <SyntaxHighlighter
-                                                style={vscDarkPlus}
-                                                language={match[1]}
-                                                PreTag="div"
-                                                wrapLines={true}
-                                                customStyle={{
-                                                    margin: 0,
-                                                    borderRadius: "6px",
-                                                    fontSize: "0.875rem",
-                                                }}
+                    {/* Text content rendering */}
+                    {hasTextContent && (
+                        <div
+                            className={`${isEmojiOnly ? "text-4xl p-2" : `px-4 py-3 ${fontSizeClassName}`} ${
+                                hasFileAttachment ? "pt-0" : ""
+                            }`}
+                        >
+                            <ReactMarkdown
+                                components={{
+                                    code({ node, inline, className, children, ...props }) {
+                                        const match = /language-(\w+)/.exec(className || "");
+                                        return !inline && match ? (
+                                            <div className="my-2 rounded-md overflow-hidden">
+                                                <SyntaxHighlighter
+                                                    style={vscDarkPlus}
+                                                    language={match[1]}
+                                                    PreTag="div"
+                                                    wrapLines={true}
+                                                    customStyle={{
+                                                        margin: 0,
+                                                        borderRadius: "6px",
+                                                        fontSize: "0.875rem",
+                                                    }}
+                                                    {...props}
+                                                >
+                                                    {String(children).replace(/\n$/, "")}
+                                                </SyntaxHighlighter>
+                                            </div>
+                                        ) : (
+                                            <code
+                                                className={`${className} bg-black/10 px-1 py-0.5 rounded text-sm`}
                                                 {...props}
                                             >
-                                                {String(children).replace(/\n$/, "")}
-                                            </SyntaxHighlighter>
-                                        </div>
-                                    ) : (
-                                        <code
-                                            className={`${className} bg-black/10 px-1 py-0.5 rounded text-sm`}
-                                            {...props}
-                                        >
-                                            {children}
-                                        </code>
-                                    );
-                                },
-                                p({ children }) {
-                                    return <p className="mb-1 last:mb-0">{children}</p>;
-                                },
-                                ul({ children }) {
-                                    return <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>;
-                                },
-                                ol({ children }) {
-                                    return <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>;
-                                },
-                            }}
-                        >
-                            {message.text}
-                        </ReactMarkdown>
-                    </div>
-                )}
+                                                {children}
+                                            </code>
+                                        );
+                                    },
+                                    p({ children }) {
+                                        return <p className="mb-1 last:mb-0">{children}</p>;
+                                    },
+                                    ul({ children }) {
+                                        return <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>;
+                                    },
+                                    ol({ children }) {
+                                        return <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>;
+                                    },
+                                }}
+                            >
+                                {message.text}
+                            </ReactMarkdown>
+                        </div>
+                    )}
 
-                {/* Timestamp */}
-                {showTimestamps && (
-                    <span className="text-[11px] text-slate-500 mt-1 mr-3 mb-2 self-end opacity-70 hover:opacity-100 transition-opacity duration-200">
-                        {formatMessageTime(message.createdAt)}
-                    </span>
-                )}
+                    {/* Timestamp */}
+                    {showTimestamps && (
+                        <span className="text-[11px] text-slate-500 mt-1 mr-3 mb-2 self-end opacity-70 hover:opacity-100 transition-opacity duration-200">
+                            {formatMessageTime(message.createdAt)}
+                        </span>
+                    )}
+                    {message.reactions && message.reactions.length > 0 && (
+                        <div className="absolute bottom-0 right-0 flex items-center space-x-1 p-1 bg-base-100 rounded-full shadow-md">
+                            {message.reactions.map((reaction, index) => (
+                                <span key={index} className="text-xs">
+                                    {reaction.emoji}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
-    );
-});
+        );
+    }
+);
 MessageItem.displayName = "MessageItem";
 
 const EmptyState = memo(() => (
@@ -166,9 +182,20 @@ const MessageListErrorBoundary = ({ children, fallback }) => {
 };
 
 const ChatContainer = memo(() => {
-    const { message, getMessages, isMessageLoading, selectedUser, subscribeToMessages, unSubscribeToMessages } =
-        useUserChatStore();
+    const {
+        message,
+        getMessages,
+        isMessageLoading,
+        selectedUser,
+        subscribeToMessages,
+        unSubscribeToMessages,
+        reactToMessage,
+        starMessage,
+        deleteMessage,
+    } = useUserChatStore();
     const [mediaInModal, setMediaInModal] = useState(null);
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const { user } = useUserAuthStore();
     const appearance = useUserAppearanceStore();
     const { chatBackground, density, animationsEnabled } = appearance;
@@ -181,6 +208,31 @@ const ChatContainer = memo(() => {
     const handleMediaClick = useCallback((src, type) => {
         setMediaInModal({ src, type });
     }, []);
+
+    const handleMessageClick = (message) => {
+        setSelectedMessage(message);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedMessage(null);
+    };
+
+    const handleStar = (messageId) => {
+        starMessage(messageId);
+        handleCloseModal();
+    };
+
+    const handleDelete = (messageId) => {
+        deleteMessage(messageId);
+        handleCloseModal();
+    };
+
+    const handleReact = (messageId, emoji) => {
+        reactToMessage(messageId, emoji);
+        handleCloseModal();
+    };
 
     const scrollToBottom = useCallback(() => {
         if (messageEndRef.current) {
@@ -227,6 +279,7 @@ const ChatContainer = memo(() => {
                 messageRef={messageEndRef}
                 appearance={appearance}
                 onMediaClick={handleMediaClick}
+                onMessageClick={handleMessageClick}
             />
         ));
     }, [message, user, selectedUser, appearance, handleMediaClick]);
@@ -279,6 +332,15 @@ const ChatContainer = memo(() => {
             </div>
             {mediaInModal && (
                 <MediaModal src={mediaInModal.src} type={mediaInModal.type} onClose={() => setMediaInModal(null)} />
+            )}
+            {isModalOpen && selectedMessage && (
+                <MessageModal
+                    message={selectedMessage}
+                    onClose={handleCloseModal}
+                    onStar={handleStar}
+                    onDelete={handleDelete}
+                    onReact={handleReact}
+                />
             )}
         </div>
     );

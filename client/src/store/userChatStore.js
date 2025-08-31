@@ -85,6 +85,43 @@ export const useUserChatStore = create((set, get) => ({
         }
     },
 
+    reactToMessage: async (messageId, emoji) => {
+        try {
+            const res = await axiosInstance.post(`/message/${messageId}/react`, { emoji });
+            const updatedMessage = res.data;
+            set((state) => ({
+                message: state.message.map((msg) => (msg._id === messageId ? updatedMessage : msg)),
+            }));
+        } catch (error) {
+            toast.error("Failed to react to message");
+        }
+    },
+
+    starMessage: async (messageId) => {
+        try {
+            const res = await axiosInstance.put(`/message/${messageId}/star`);
+            const updatedMessage = res.data;
+            set((state) => ({
+                message: state.message.map((msg) => (msg._id === messageId ? updatedMessage : msg)),
+            }));
+            toast.success(`Message ${updatedMessage.isStarred ? "starred" : "unstarred"}`);
+        } catch (error) {
+            toast.error("Failed to star message");
+        }
+    },
+
+    deleteMessage: async (messageId) => {
+        try {
+            await axiosInstance.delete(`/message/${messageId}`);
+            set((state) => ({
+                message: state.message.filter((msg) => msg._id !== messageId),
+            }));
+            toast.success("Message deleted");
+        } catch (error) {
+            toast.error("Failed to delete message");
+        }
+    },
+
     subscribeToMessages: () => {
         const { selectedUser } = get();
         if (!selectedUser) return;
@@ -94,6 +131,12 @@ export const useUserChatStore = create((set, get) => ({
         socket.on("newMessage", (newMessage) => {
             if (newMessage.senderId !== selectedUser._id) return;
             set({ message: [...get().message, newMessage] });
+        });
+
+        socket.on("messageReaction", (updatedMessage) => {
+            set((state) => ({
+                message: state.message.map((msg) => (msg._id === updatedMessage._id ? updatedMessage : msg)),
+            }));
         });
     },
 

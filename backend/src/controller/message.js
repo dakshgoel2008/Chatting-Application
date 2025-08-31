@@ -118,3 +118,53 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
         throw new ErrorHandler(500, "Can't send the message (Internal Server Error)", [error.message]);
     }
 });
+export const postReactToMessage = ErrorWrapper(async (req, res) => {
+    const { messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user._id;
+
+    const message = await Message.findById(messageId);
+    if (!message) throw new ErrorHandler(404, "Message not found");
+
+    const existingReaction = message.reactions.find((r) => r.userId.toString() === userId.toString());
+
+    if (existingReaction) {
+        if (existingReaction.emoji === emoji) {
+            // Remove reaction if the same emoji is clicked again
+            message.reactions = message.reactions.filter((r) => r.userId.toString() !== userId.toString());
+        } else {
+            // Update reaction if a different emoji is clicked
+            existingReaction.emoji = emoji;
+        }
+    } else {
+        // Add new reaction
+        message.reactions.push({ emoji, userId });
+    }
+
+    await message.save();
+
+    io.to(message.senderId.toString()).emit("messageReaction", message);
+    io.to(message.receiverId.toString()).emit("messageReaction", message);
+
+    res.status(200).json(message);
+});
+
+export const putStarMessage = ErrorWrapper(async (req, res) => {
+    const { messageId } = req.params;
+    const message = await Message.findById(messageId);
+    if (!message) throw new ErrorHandler(404, "Message not found");
+
+    message.isStarred = !message.isStarred;
+    await message.save();
+
+    res.status(200).json(message);
+});
+
+export const deleteMessage = ErrorWrapper(async (req, res) => {
+    const { messageId } = req.params;
+    const message = await Message.findById(messageId);
+    if (!message) throw new ErrorHandler(404, "Message not found");
+
+    await message.deleteOne();
+    res.status(200).json({ message: "Message deleted" });
+});
