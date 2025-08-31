@@ -1,5 +1,6 @@
 import { THEMES } from "../../constants";
 import { useThemeStore } from "../../store/userThemeStore";
+import { useUserAppearanceStore } from "../../store/userAppearanceStore";
 import { Send, Image, Palette, Type, MessageCircle, Eye, Monitor, Smartphone } from "lucide-react";
 import { useState } from "react";
 import {
@@ -12,15 +13,18 @@ import {
 
 const Appearance = () => {
     const { theme, setTheme } = useThemeStore();
+    const {
+        chatBackground,
+        bubbleStyle,
+        fontSize,
+        density,
+        showTimestamps,
+        showAvatars,
+        animationsEnabled,
+        setAppearance,
+        resetAppearance,
+    } = useUserAppearanceStore();
 
-    // Extended appearance state
-    const [chatBackground, setChatBackground] = useState("default");
-    const [bubbleStyle, setBubbleStyle] = useState("rounded");
-    const [fontSize, setFontSize] = useState("medium");
-    const [density, setDensity] = useState("comfortable");
-    const [showTimestamps, setShowTimestamps] = useState(true);
-    const [showAvatars, setShowAvatars] = useState(true);
-    const [animationsEnabled, setAnimationsEnabled] = useState(true);
     const [activeTab, setActiveTab] = useState("themes");
 
     const getCurrentBackground = () => {
@@ -130,15 +134,17 @@ const Appearance = () => {
                                                 : "border-base-300 hover:border-base-400"
                                         }
                                     `}
-                                    onClick={() => setChatBackground(bg.id)}
+                                    onClick={() => setAppearance({ chatBackground: bg.id })}
                                 >
                                     <div
                                         className={`w-full h-full ${bg.value}`}
                                         style={
-                                            bg.pattern
+                                            bg.imageUrl
+                                                ? { backgroundImage: `url(${bg.imageUrl})` }
+                                                : bg.pattern
                                                 ? {
                                                       backgroundImage: bg.pattern,
-                                                      backgroundSize: "20px 20px",
+                                                      backgroundSize: bg.patternSize || "20px 20px",
                                                   }
                                                 : {}
                                         }
@@ -178,7 +184,7 @@ const Appearance = () => {
                                                     : "border-base-300 hover:border-base-400"
                                             }
                                         `}
-                                        onClick={() => setBubbleStyle(style.id)}
+                                        onClick={() => setAppearance({ bubbleStyle: style.id })}
                                     >
                                         <div className={`w-full h-8 bg-primary/20 ${style.class} mb-2`}></div>
                                         <span className="text-sm font-medium">{style.name}</span>
@@ -202,7 +208,7 @@ const Appearance = () => {
                                                     : "border-base-300 hover:border-base-400"
                                             }
                                         `}
-                                        onClick={() => setFontSize(size.id)}
+                                        onClick={() => setAppearance({ fontSize: size.id })}
                                     >
                                         <div className={`${size.class} font-medium mb-1`}>Aa</div>
                                         <span className="text-xs">{size.name}</span>
@@ -236,7 +242,7 @@ const Appearance = () => {
                                                     : "border-base-300 hover:border-base-400"
                                             }
                                         `}
-                                        onClick={() => setDensity(d.id)}
+                                        onClick={() => setAppearance({ density: d.id })}
                                     >
                                         <div className={`${d.spacing} mb-2`}>
                                             <div className={`w-full h-2 bg-primary/20 rounded ${d.padding}`}></div>
@@ -261,7 +267,7 @@ const Appearance = () => {
                                         type="checkbox"
                                         className="toggle toggle-primary"
                                         checked={showTimestamps}
-                                        onChange={(e) => setShowTimestamps(e.target.checked)}
+                                        onChange={(e) => setAppearance({ showTimestamps: e.target.checked })}
                                     />
                                 </label>
 
@@ -274,7 +280,7 @@ const Appearance = () => {
                                         type="checkbox"
                                         className="toggle toggle-primary"
                                         checked={showAvatars}
-                                        onChange={(e) => setShowAvatars(e.target.checked)}
+                                        onChange={(e) => setAppearance({ showAvatars: e.target.checked })}
                                     />
                                 </label>
 
@@ -287,7 +293,7 @@ const Appearance = () => {
                                         type="checkbox"
                                         className="toggle toggle-primary"
                                         checked={animationsEnabled}
-                                        onChange={(e) => setAnimationsEnabled(e.target.checked)}
+                                        onChange={(e) => setAppearance({ animationsEnabled: e.target.checked })}
                                     />
                                 </label>
                             </div>
@@ -328,10 +334,12 @@ const Appearance = () => {
                                     }
                                     `}
                                     style={
-                                        getCurrentBackground().pattern
+                                        getCurrentBackground().imageUrl
+                                            ? { backgroundImage: `url(${getCurrentBackground().imageUrl})` }
+                                            : getCurrentBackground().pattern
                                             ? {
                                                   backgroundImage: getCurrentBackground().pattern,
-                                                  backgroundSize: "20px 20px",
+                                                  backgroundSize: getCurrentBackground().patternSize || "20px 20px",
                                               }
                                             : {}
                                     }
@@ -423,13 +431,7 @@ const Appearance = () => {
                     className="btn btn-outline btn-error"
                     onClick={() => {
                         setTheme("light");
-                        setChatBackground("default");
-                        setBubbleStyle("rounded");
-                        setFontSize("medium");
-                        setDensity("comfortable");
-                        setShowTimestamps(true);
-                        setShowAvatars(true);
-                        setAnimationsEnabled(true);
+                        resetAppearance();
                     }}
                 >
                     Reset to Defaults

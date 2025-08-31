@@ -4,12 +4,14 @@ import MessageInput from "./MessageInput";
 import ChatHeader from "./ChatHeader";
 import MessageSkeleton from "./Skeletons/MessageSkeleton";
 import { useUserAuthStore } from "../store/userAuthStore";
+import { useUserAppearanceStore } from "../store/userAppearanceStore";
+import { BACKGROUND_OPTIONS, BUBBLE_STYLES, FONT_SIZES, DENSITY_OPTIONS } from "../constants/appearanceSection.js";
 import { formatMessageTime } from "../lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-// Separate component for file attachments
+// ... (FileAttachment, getEmojiCount, isOnlyEmojis components remain the same)
 const FileAttachment = memo(({ file }) => {
     const renderFileContent = useMemo(() => {
         if (!file) return null;
@@ -70,7 +72,7 @@ const FileAttachment = memo(({ file }) => {
                         className="flex items-center gap-2 text-blue-500 hover:text-blue-700 underline transition-colors"
                         aria-label="Open Word document in new tab"
                     >
-                        📄 View Word Document
+                        塘 View Word Document
                     </a>
                 </div>
             );
@@ -87,7 +89,7 @@ const FileAttachment = memo(({ file }) => {
                         className="flex items-center gap-2 text-green-600 hover:text-green-800 underline transition-colors"
                         aria-label="Open Excel spreadsheet in new tab"
                     >
-                        📊 View Excel Spreadsheet
+                        投 View Excel Spreadsheet
                     </a>
                 </div>
             );
@@ -103,7 +105,7 @@ const FileAttachment = memo(({ file }) => {
                     className="flex items-center gap-2 text-gray-600 hover:text-gray-800 underline transition-colors"
                     aria-label="Open file in new tab"
                 >
-                    📎 View File
+                    梼 View File
                 </a>
             </div>
         );
@@ -126,26 +128,32 @@ function isOnlyEmojis(text) {
 }
 
 // Individual message component
-const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) => {
+const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef, appearance }) => {
     const isOwnMessage = message.senderId === user._id;
     const senderInfo = isOwnMessage ? user : selectedUser;
+    const { bubbleStyle, showTimestamps, showAvatars, fontSize } = appearance;
+
+    const bubbleClassName = BUBBLE_STYLES.find((style) => style.id === bubbleStyle)?.class || "rounded-2xl";
+    const fontSizeClassName = FONT_SIZES.find((size) => size.id === fontSize)?.class || "text-base";
 
     return (
         <div className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`} ref={isLast ? messageRef : null}>
             {/* profile image */}
-            <div className="chat-image avatar">
-                <div className="size-10 rounded-full border overflow-hidden bg-gray-200">
-                    <img
-                        src={senderInfo?.profileImage}
-                        alt={`${senderInfo?.name || "User"}'s profile`}
-                        className="w-full h-full object-cover"
-                    />
+            {showAvatars && (
+                <div className="chat-image avatar">
+                    <div className="size-10 rounded-full border overflow-hidden bg-gray-200">
+                        <img
+                            src={senderInfo?.profileImage}
+                            alt={`${senderInfo?.name || "User"}'s profile`}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* color scheme for messages */}
             <div
-                className={`relative chat-bubble flex flex-col max-w-xs sm:max-w-md rounded-2xl px-4 py-2 shadow-xl ${
+                className={`relative chat-bubble flex flex-col max-w-xs sm:max-w-md ${bubbleClassName} px-4 py-2 shadow-xl ${
                     isOwnMessage ? "bg-[#bed2ef] text-gray-900" : "bg-[#ffeeab] text-black border "
                 }`}
             >
@@ -162,7 +170,7 @@ const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) =
                                 if (count <= 3) return "text-3xl"; // few emojis
                                 return "text-xl"; // more emojis
                             }
-                            return "text-base"; // normal text
+                            return fontSizeClassName; // normal text
                         })()}
                     >
                         <ReactMarkdown
@@ -193,9 +201,11 @@ const MessageItem = memo(({ message, user, selectedUser, isLast, messageRef }) =
                 )}
 
                 {/* Time formatting */}
-                <span className="text-[12px] text-slate-500 mt-1 ml-auto opacity-80 group-hover:opacity-100 transition-opacity duration-200">
-                    {formatMessageTime(message.createdAt)}
-                </span>
+                {showTimestamps && (
+                    <span className="text-[12px] text-slate-500 mt-1 ml-auto opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+                        {formatMessageTime(message.createdAt)}
+                    </span>
+                )}
             </div>
         </div>
     );
@@ -217,7 +227,7 @@ const EmptyState = memo(() => (
 
 EmptyState.displayName = "EmptyState"; // for updating the dev tool to show me same name as I mentioned here.
 
-// Error boundary for message rendering -> Just for better error handling (showoff😁)
+// Error boundary for message rendering -> Just for better error handling (showoff)
 const MessageListErrorBoundary = ({ children, fallback }) => {
     try {
         return children;
@@ -242,8 +252,13 @@ const ChatContainer = memo(() => {
         useUserChatStore();
 
     const { user } = useUserAuthStore();
+    const appearance = useUserAppearanceStore();
+    const { chatBackground, density, animationsEnabled } = appearance;
     const messageEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+
+    const background = BACKGROUND_OPTIONS.find((bg) => bg.id === chatBackground) || BACKGROUND_OPTIONS[0];
+    const densitySettings = DENSITY_OPTIONS.find((d) => d.id === density) || DENSITY_OPTIONS[1];
 
     // TODO: Memoize the scroll to bottom function -> can be improved later.
     // useCallback -> just a hook bro for memoisation.
@@ -252,11 +267,11 @@ const ChatContainer = memo(() => {
         if (messageEndRef.current) {
             // using the current messgae time for scrolling.
             messageEndRef.current.scrollIntoView({
-                behavior: "smooth",
+                behavior: animationsEnabled ? "smooth" : "auto",
                 block: "end",
             });
         }
-    }, []);
+    }, [animationsEnabled]);
 
     // Handle message fetching and subscription
     useEffect(() => {
@@ -264,7 +279,7 @@ const ChatContainer = memo(() => {
             getMessages(selectedUser._id); // getting all the messages of the user.
 
             if (subscribeToMessages) {
-                subscribeToMessages(); // listening with deep ears for new messages😁
+                subscribeToMessages(); // listening with deep ears for new messages
             }
         }
 
@@ -298,9 +313,10 @@ const ChatContainer = memo(() => {
                 selectedUser={selectedUser}
                 isLast={index === message.length - 1}
                 messageRef={messageEndRef}
+                appearance={appearance}
             />
         ));
-    }, [message, user, selectedUser]);
+    }, [message, user, selectedUser, appearance]);
 
     // Loading state with consistent layout
     // nothing but just a enhanced loading state for messages.
@@ -329,7 +345,20 @@ const ChatContainer = memo(() => {
             </div>
 
             {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth" ref={messagesContainerRef}>
+            <div
+                className={`flex-1 overflow-y-auto scroll-smooth ${background.value} ${densitySettings.spacing} ${densitySettings.padding}`}
+                style={
+                    background.imageUrl
+                        ? { backgroundImage: `url(${background.imageUrl})` }
+                        : background.pattern
+                        ? {
+                              backgroundImage: background.pattern,
+                              backgroundSize: background.patternSize || "20px 20px",
+                          }
+                        : {}
+                }
+                ref={messagesContainerRef}
+            >
                 <MessageListErrorBoundary>
                     {memoizedMessages.length > 0 ? (
                         <>
@@ -351,6 +380,6 @@ const ChatContainer = memo(() => {
     );
 });
 
-ChatContainer.displayName = "ChatContainer"; // for issue of memo it was showing me Memo() Anonymous like thing.This solved the issue 😁
+ChatContainer.displayName = "ChatContainer"; // for issue of memo it was showing me Memo() Anonymous like thing.This solved the issue 
 
 export default ChatContainer;

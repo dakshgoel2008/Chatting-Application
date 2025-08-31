@@ -34,6 +34,8 @@ const userSchema = new Schema(
         refreshToken: {
             type: String,
         },
+        starredChats: [{ type: Schema.Types.ObjectId, ref: "User" }],
+        archivedChats: [{ type: Schema.Types.ObjectId, ref: "User" }],
     },
     {
         timestamps: true, // Enable timestamps

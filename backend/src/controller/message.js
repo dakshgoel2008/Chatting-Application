@@ -50,6 +50,7 @@ export const getMessages = ErrorWrapper(async (req, res, next) => {
 
 export const postSendMessage = ErrorWrapper(async (req, res, next) => {
     try {
+        const startTime = Date.now();
         const { id: receiverId } = req.params; // id of the user whom we want to chat with.
         // after that just renaming it.
         if (!receiverId) {
@@ -66,16 +67,28 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
         let fileUrl = null;
 
         if (req.files?.image) {
+            const s = Date.now();
             imageUrl = await uploadOnCloudinary(req.files.image[0].path); // Upload image
+            const e = Date.now() - s;
+            console.log(`[METRICS] Image upload time: ${e}ms`);
         }
         if (req.files?.video) {
+            const s = Date.now();
             videoUrl = await uploadOnCloudinary(req.files.video[0].path); // Upload video
+            const e = Date.now() - s;
+            console.log(`[METRICS] Video upload time: ${e}ms`);
         }
         if (req.files?.audio) {
+            const s = Date.now();
             audioUrl = await uploadOnCloudinary(req.files.audio[0].path); // Upload audio
+            const e = Date.now() - s;
+            console.log(`[METRICS] Audio upload time: ${e}ms`);
         }
         if (req.files?.file) {
+            const s = Date.now();
             fileUrl = await uploadOnCloudinary(req.files.file[0].path); // Upload general file
+            const e = Date.now() - s;
+            console.log(`[METRICS] File upload time: ${e}ms`);
         }
         const message = await Message.create({
             senderId,
@@ -91,6 +104,9 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("newMessage", message);
         }
+
+        const responseTime = Date.now() - startTime;
+        console.log(`[METRICS] Send Message - Response Time: ${responseTime}ms`);
 
         res.status(201).json({
             message: "Message sent successfully",

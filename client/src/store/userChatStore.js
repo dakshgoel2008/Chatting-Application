@@ -9,6 +9,8 @@ export const useUserChatStore = create((set, get) => ({
     selectedUser: null,
     isUsersLoading: false,
     isMessageLoading: false,
+    starredChats: [],
+    archivedChats: [],
 
     getUsers: async () => {
         set({ isUsersLoading: true });
@@ -36,7 +38,6 @@ export const useUserChatStore = create((set, get) => ({
         }
     },
 
-    
     sendMessage: async (data) => {
         const { selectedUser, message } = get();
         try {
@@ -45,6 +46,42 @@ export const useUserChatStore = create((set, get) => ({
         } catch (error) {
             console.error("Send message error:", error);
             toast.error(error?.response?.data?.message || error?.message || "Send message failed. Please try again.");
+        }
+    },
+
+    // star chat or unstar chat
+    toggleStar: async (userId) => {
+        const { starredChats } = get();
+        const isStarred = starredChats.includes(userId);
+        const endpoint = isStarred ? "/users/unstar" : "/users/star";
+        try {
+            await axiosInstance.post(endpoint, { userId });
+            set((state) => ({
+                starredChats: isStarred
+                    ? state.starredChats.filter((id) => id !== userId)
+                    : [...state.starredChats, userId],
+            }));
+            toast.success(`Chat ${isStarred ? "unstarred" : "starred"}`);
+        } catch (error) {
+            toast.error("Failed to update star status");
+        }
+    },
+
+    // archive or unarchive the chats.
+    toggleArchive: async (userId) => {
+        const { archivedChats } = get();
+        const isArchived = archivedChats.includes(userId);
+        const endpoint = isArchived ? "/users/unarchive" : "/users/archive";
+        try {
+            await axiosInstance.post(endpoint, { userId });
+            set((state) => ({
+                archivedChats: isArchived
+                    ? state.archivedChats.filter((id) => id !== userId)
+                    : [...state.archivedChats, userId],
+            }));
+            toast.success(`Chat ${isArchived ? "unarchived" : "archived"}`);
+        } catch (error) {
+            toast.error("Failed to update archive status");
         }
     },
 
