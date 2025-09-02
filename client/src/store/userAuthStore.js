@@ -3,7 +3,8 @@ import { axiosInstance } from "./../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.MODE == "development" ? "http://localhost:4444" : "/api";
+// const BASE_URL = import.meta.env.MODE == "development" ? "http://localhost:4444" : "/api";
+const BASE_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:4444";
 
 export const useUserAuthStore = create((set, get) => ({
     isLoggingIn: false,
