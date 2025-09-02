@@ -6,7 +6,7 @@ import upload from "../utils/multer.js";
 const router = express.Router();
 
 router.get("/users", verifyJWT, getUsers);
-router.get("/:id", verifyJWT, getMessages);
+router.get("/conversation/:id", verifyJWT, getMessages);
 router.post(
     "/send/:id",
     verifyJWT,
