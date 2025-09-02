@@ -99,14 +99,16 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
     // console.log(user);
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true, // for XSS attacks
-        secure: process.env.NODE_ENV === "development", // for production
+        // secure: process.env.NODE_ENV === "development",
+        secure: process.env.NODE_ENV === "production", // for production
         sameSite: "strict", // for CSRF attacks
         path: "/",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     })
         .cookie("accessToken", accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "development",
+            // secure: process.env.NODE_ENV === "development",
+            secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             path: "/",
             maxAge: 15 * 60 * 1000, // 15 minutes
@@ -116,10 +118,10 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
             message: "Logged in successfully",
             user: {
                 id: user._id,
-                username: user.username,
+                usernames: user.username,
                 email: user.email,
                 name: user.name,
-                image: user.image,
+                image: user.profsileImage,
             },
             success: true,
         });
@@ -144,7 +146,8 @@ export const postLogout = ErrorWrapper(async (req, res, next) => {
     // Clear cookies
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "development",
+        // secure: process.env.NODE_ENV === "development",
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         path: "/",
     };
