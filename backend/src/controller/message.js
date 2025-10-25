@@ -149,17 +149,6 @@ export const postReactToMessage = ErrorWrapper(async (req, res) => {
     res.status(200).json(message);
 });
 
-export const putStarMessage = ErrorWrapper(async (req, res) => {
-    const { messageId } = req.params;
-    const message = await Message.findById(messageId);
-    if (!message) throw new ErrorHandler(404, "Message not found");
-
-    message.isStarred = !message.isStarred;
-    await message.save();
-
-    res.status(200).json(message);
-});
-
 export const deleteMessage = ErrorWrapper(async (req, res) => {
     const { messageId } = req.params;
     const message = await Message.findById(messageId);

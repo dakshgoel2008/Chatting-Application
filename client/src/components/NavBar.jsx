@@ -6,7 +6,6 @@ import {
     ArrowLeftRight,
     Search,
     Archive,
-    Star,
     Moon,
     Sun,
     HelpCircle,
@@ -49,8 +48,8 @@ const NavBar = () => {
     const navigationItems = useMemo(
         () => [
             { path: "/", icon: Users, label: "Contacts", requiresAuth: true },
-            { path: "/starred", icon: Star, label: "Starred", requiresAuth: true },
-            { path: "/archived", icon: Archive, label: "Archive", requiresAuth: true },
+            // { path: "/starred", icon: Star, label: "Starred", requiresAuth: true },
+            // { path: "/archived", icon: Archive, label: "Archive", requiresAuth: true },
         ],
         []
     );
@@ -97,8 +96,7 @@ const NavBar = () => {
     }, [isCollapsed, isTransitioning]);
 
     const handleSearch = useCallback(() => {
-        console.log("Opening search...");
-        // Add your search logic here
+        // console.log("Opening search...");
         alert("Demo: Opening search...");
     }, []);
 

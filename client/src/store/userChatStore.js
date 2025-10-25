@@ -49,42 +49,6 @@ export const useUserChatStore = create((set, get) => ({
         }
     },
 
-    // star chat or unstar chat
-    toggleStar: async (userId) => {
-        const { starredChats } = get();
-        const isStarred = starredChats.includes(userId);
-        const endpoint = isStarred ? "/users/unstar" : "/users/star";
-        try {
-            await axiosInstance.post(endpoint, { userId });
-            set((state) => ({
-                starredChats: isStarred
-                    ? state.starredChats.filter((id) => id !== userId)
-                    : [...state.starredChats, userId],
-            }));
-            toast.success(`Chat ${isStarred ? "unstarred" : "starred"}`);
-        } catch (error) {
-            toast.error("Failed to update star status");
-        }
-    },
-
-    // archive or unarchive the chats.
-    toggleArchive: async (userId) => {
-        const { archivedChats } = get();
-        const isArchived = archivedChats.includes(userId);
-        const endpoint = isArchived ? "/users/unarchive" : "/users/archive";
-        try {
-            await axiosInstance.post(endpoint, { userId });
-            set((state) => ({
-                archivedChats: isArchived
-                    ? state.archivedChats.filter((id) => id !== userId)
-                    : [...state.archivedChats, userId],
-            }));
-            toast.success(`Chat ${isArchived ? "unarchived" : "archived"}`);
-        } catch (error) {
-            toast.error("Failed to update archive status");
-        }
-    },
-
     reactToMessage: async (messageId, emoji) => {
         try {
             const res = await axiosInstance.post(`/message/${messageId}/react`, { emoji });
@@ -96,19 +60,7 @@ export const useUserChatStore = create((set, get) => ({
             toast.error("Failed to react to message");
         }
     },
-
-    starMessage: async (messageId) => {
-        try {
-            const res = await axiosInstance.put(`/message/${messageId}/star`);
-            const updatedMessage = res.data;
-            set((state) => ({
-                message: state.message.map((msg) => (msg._id === messageId ? updatedMessage : msg)),
-            }));
-            toast.success(`Message ${updatedMessage.isStarred ? "starred" : "unstarred"}`);
-        } catch (error) {
-            toast.error("Failed to star message");
-        }
-    },
+    
 
     deleteMessage: async (messageId) => {
         try {

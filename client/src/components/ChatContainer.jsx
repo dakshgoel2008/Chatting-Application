@@ -44,7 +44,7 @@ const MessageItem = memo(
 
         return (
             <div
-                className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
+                className={`chat ${isOwnMessage ? "chat-end" : ""}`}
                 ref={isLast ? messageRef : null}
                 onClick={() => onMessageClick(message)}
             >
@@ -190,7 +190,6 @@ const ChatContainer = memo(() => {
         subscribeToMessages,
         unSubscribeToMessages,
         reactToMessage,
-        starMessage,
         deleteMessage,
     } = useUserChatStore();
     const [mediaInModal, setMediaInModal] = useState(null);
@@ -219,10 +218,10 @@ const ChatContainer = memo(() => {
         setSelectedMessage(null);
     };
 
-    const handleStar = (messageId) => {
-        starMessage(messageId);
-        handleCloseModal();
-    };
+    // const handleStar = (messageId) => {
+    //     starMessage(messageId);
+    //     handleCloseModal();
+    // };
 
     const handleDelete = (messageId) => {
         deleteMessage(messageId);
@@ -337,7 +336,6 @@ const ChatContainer = memo(() => {
                 <MessageModal
                     message={selectedMessage}
                     onClose={handleCloseModal}
-                    onStar={handleStar}
                     onDelete={handleDelete}
                     onReact={handleReact}
                 />

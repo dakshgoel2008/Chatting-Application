@@ -33,33 +33,11 @@ const messageSchema = new Schema(
             type: String,
             required: false,
         },
-
-        // for better UI
-        isRead: {
-            type: Boolean,
-            default: false,
-        },
         isDeleted: {
             type: Boolean,
             default: false,
         },
         isEdited: {
-            type: Boolean,
-            default: false,
-        },
-        isForwarded: {
-            type: Boolean,
-            default: false,
-        },
-        isStarred: {
-            type: Boolean,
-            default: false,
-        },
-        isPinned: {
-            type: Boolean,
-            default: false,
-        },
-        isBlocked: {
             type: Boolean,
             default: false,
         },
