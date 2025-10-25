@@ -3,6 +3,26 @@ import ErrorHandler from "./../utils/ErrorHandler.js";
 import User from "../models/user.js";
 import uploadOnCloudinary from "./../utils/cloudinary.js";
 
+// generating access and refresh token helper function (keep as is)
+const generateAccessTokenAndRefreshToken = async (userId) => {
+    try {
+        let user = await User.findById(userId); // Use findById for simplicity
+        if (!user) {
+            // Add check if user exists
+            throw new ErrorHandler(404, "User not found when generating tokens");
+        }
+        const accessToken = await user.generateAccessToken();
+        const refreshToken = await user.generateRefreshToken();
+        user.refreshToken = refreshToken; // Save refresh token here
+        await user.save({ validateBeforeSave: false }); // Save immediately
+        return { accessToken, refreshToken };
+    } catch (err) {
+        // Log the underlying error for debugging
+        console.error("Error generating tokens:", err);
+        throw new ErrorHandler(500, "Failed to generate access and refresh tokens", [err.message]);
+    }
+};
+
 export const postSignUp = ErrorWrapper(async (req, res, next) => {
     const { email, password, username, name } = req.body;
     const requiredFields = ["email", "password", "username", "name"];
@@ -12,20 +32,27 @@ export const postSignUp = ErrorWrapper(async (req, res, next) => {
         throw new ErrorHandler(400, `Missing required fields: ${missingFields.join(", ")}`);
     }
 
-    const existingUser = await User.findOne({
-        $or: [{ email }, { username }],
-    });
-
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
         throw new ErrorHandler(400, "User already exists with this email or username");
     }
 
-    // image upload
+    // *** MODIFIED: Check if req.file exists ***
+    if (!req.file || !req.file.path) {
+        throw new ErrorHandler(400, "Profile image is required for signup.");
+    }
+
     let cloudinaryResponse;
     try {
         cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+        // Check if uploadOnCloudinary returned an error object
+        if (!cloudinaryResponse || cloudinaryResponse.error) {
+            throw new Error(cloudinaryResponse?.error || "Cloudinary upload failed");
+        }
     } catch (err) {
-        throw new ErrorHandler(500, "Failed to upload image", [err.message]);
+        console.error("Cloudinary Upload Error during signup:", err);
+        // Provide more specific error message if possible
+        throw new ErrorHandler(500, `Failed to upload image: ${err.message}`);
     }
 
     try {
@@ -34,40 +61,29 @@ export const postSignUp = ErrorWrapper(async (req, res, next) => {
             password,
             name,
             email,
-            profileImage: cloudinaryResponse.secure_url,
+            profileImage: cloudinaryResponse.secure_url, // Use secure_url
         });
         await user.save();
+
         const userObject = user.toObject();
-        delete userObject.password; // wanna delete the password from user before rendering the user.
-        delete userObject.profileImage;
+        delete userObject.password;
+        delete userObject.refreshToken; // Also remove refresh token if somehow present
+
         res.status(201).json({
             message: "User created successfully",
-            user: userObject,
+            user: {
+                id: userObject._id,
+                username: userObject.username,
+                email: userObject.email,
+                name: userObject.name,
+            },
             success: true,
         });
     } catch (err) {
         console.error("Error creating user:", err);
-        throw new ErrorHandler(500, "Fail to create user", [err.message]);
+        throw new ErrorHandler(500, `Failed to create user: ${err.message}`);
     }
 });
-
-// generating access and refresh token for the authentication.
-const generateAccessTokenAndRefreshToken = async (userId) => {
-    try {
-        let user = await User.findOne({
-            _id: userId,
-        });
-        const accessToken = await user.generateAccessToken();
-        const refreshToken = await user.generateRefreshToken();
-
-        return {
-            accessToken,
-            refreshToken,
-        };
-    } catch (err) {
-        throw new ErrorHandler(500, "Failed to generate access and refresh tokens", [err.message]);
-    }
-};
 
 export const postLogin = ErrorWrapper(async (req, res, next) => {
     const { email, password, username } = req.body;
@@ -78,48 +94,43 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
         throw new ErrorHandler(400, "Either username or email is required");
     }
 
-    // find user on basis of email or username both are allowed.
     let user = await User.findOne({ $or: [{ email }, { username }] });
-
-    // comparePassword: models.
     if (!user || !(await user.comparePassword(password))) {
         throw new ErrorHandler(401, "Invalid email or password");
     }
 
-    // saving the refresh token in the database.
     const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id);
-    user.refreshToken = refreshToken;
-    await user.save();
 
-    // want to remove the critical information from the user object.
-    user = await User.findOne({
-        $or: [{ email }, { username }],
-    }).select("-password -refreshToken");
+    const userForResponse = await User.findById(user._id).select("-password -refreshToken");
+    if (!userForResponse) {
+        throw new ErrorHandler(404, "User not found after token generation");
+    }
 
-    // console.log(user);
-    res.cookie("refreshToken", refreshToken, {
-        httpOnly: true, // for XSS attacks
-        secure: process.env.NODE_ENV === "development", // for production
-        sameSite: "strict", // for CSRF attacks
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
         path: "/",
+    };
+
+    res.cookie("refreshToken", refreshToken, {
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     })
         .cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "development",
-            sameSite: "strict",
-            path: "/",
+            ...cookieOptions,
             maxAge: 15 * 60 * 1000, // 15 minutes
         })
         .status(200)
         .json({
             message: "Logged in successfully",
             user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                name: user.name,
-                image: user.image,
+                _id: userForResponse._id,
+                username: userForResponse.username,
+                email: userForResponse.email,
+                name: userForResponse.name,
+                profileImage: userForResponse.profileImage,
+                createdAt: userForResponse.createdAt,
             },
             success: true,
         });
@@ -127,25 +138,23 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
 
 export const postLogout = ErrorWrapper(async (req, res, next) => {
     const { refreshToken } = req.cookies;
-    if (!refreshToken) {
-        throw new ErrorHandler(401, "No refresh token provided");
+
+    if (refreshToken) {
+        try {
+            const user = await User.findOne({ refreshToken });
+            if (user) {
+                user.refreshToken = null;
+                await user.save({ validateBeforeSave: false });
+            }
+        } catch (dbError) {
+            console.error("Error clearing refresh token from DB during logout:", dbError);
+        }
     }
 
-    // Find user using refresh token
-    const user = await User.findOne({ refreshToken });
-    if (!user) {
-        throw new ErrorHandler(401, "Invalid refresh token");
-    }
-
-    // Remove refresh token from the DB
-    user.refreshToken = null;
-    await user.save();
-
-    // Clear cookies
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "development",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "lax",
         path: "/",
     };
 
@@ -159,43 +168,70 @@ export const postLogout = ErrorWrapper(async (req, res, next) => {
 });
 
 export const putUpdateProfile = ErrorWrapper(async (req, res, next) => {
-    const { name, email, username } = req.body;
-    const requiredFields = ["name", "email", "username"];
-    const missingFields = requiredFields.filter((field) => !req.body[field]);
+    const { name, username } = req.body;
+    const userId = req.user._id;
 
-    if (missingFields.length > 0) {
-        throw new ErrorHandler(400, `Missing required fields: ${missingFields.join(", ")}`);
+    if (!name && !username && !req.file) {
+        throw new ErrorHandler(400, "No profile information provided to update.");
+    }
+    if (name && name.trim().length === 0) {
+        throw new ErrorHandler(400, "Name cannot be empty.");
+    }
+    if (username && username.trim().length === 0) {
+        throw new ErrorHandler(400, "Username cannot be empty.");
     }
 
-    // image upload
-    let cloudinaryResponse;
-    try {
-        cloudinaryResponse = await uploadOnCloudinary(req.file.path);
-    } catch (err) {
-        throw new ErrorHandler(500, "Failed to upload image", [err.message]);
-    }
-
-    // find user on basis of email or username both are allowed.
-    let user = await User.findOne({ _id: req.user._id });
-
+    let user = await User.findById(userId);
     if (!user) {
-        throw new ErrorHandler(401, "User not found");
+        throw new ErrorHandler(404, "User not found");
     }
 
-    user.username = username;
-    user.profileImage = cloudinaryResponse.secure_url;
+    let updateData = {};
 
-    await user.save();
+    if (name) updateData.name = name.trim();
+    if (username) {
+        if (username.trim().toLowerCase() !== user.username) {
+            const existingUser = await User.findOne({ username: username.trim().toLowerCase() });
+            if (existingUser) {
+                throw new ErrorHandler(400, "Username already taken.");
+            }
+            updateData.username = username.trim().toLowerCase();
+        }
+    }
+
+    if (req.file && req.file.path) {
+        let cloudinaryResponse;
+        try {
+            cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+            if (!cloudinaryResponse || cloudinaryResponse.error) {
+                throw new Error(cloudinaryResponse?.error || "Cloudinary upload failed during profile update");
+            }
+            updateData.profileImage = cloudinaryResponse.secure_url;
+        } catch (err) {
+            console.error("Cloudinary Upload Error during profile update:", err);
+            throw new ErrorHandler(500, `Failed to upload new profile image: ${err.message}`);
+        }
+    }
+
+    if (Object.keys(updateData).length > 0) {
+        Object.assign(user, updateData);
+        await user.save();
+    }
+
+    const updatedUser = await User.findById(userId).select("-password -refreshToken");
+    if (!updatedUser) {
+        throw new ErrorHandler(404, "Updated user not found");
+    }
 
     res.status(200).json({
         message: "Profile updated successfully",
         user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            name: user.name,
-            profileImage: user.profileImage,
-            createdAt: user.createdAt,
+            _id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            name: updatedUser.name,
+            profileImage: updatedUser.profileImage,
+            createdAt: updatedUser.createdAt,
         },
         success: true,
     });
@@ -203,52 +239,73 @@ export const putUpdateProfile = ErrorWrapper(async (req, res, next) => {
 
 export const putUpdatePassword = ErrorWrapper(async (req, res, next) => {
     const { password, newPassword } = req.body;
-    const requiredFields = ["password", "newPassword"];
-    const missingFields = requiredFields.filter((field) => !req.body[field]);
-
-    if (missingFields.length > 0) {
-        throw new ErrorHandler(400, `Missing required fields: ${missingFields.join(", ")}`);
+    if (!password || !newPassword) {
+        throw new ErrorHandler(400, "Both current and new passwords are required.");
+    }
+    if (newPassword.length < 6) {
+        throw new ErrorHandler(400, "New password must be at least 6 characters long.");
+    }
+    if (password === newPassword) {
+        throw new ErrorHandler(400, "New password cannot be the same as the current password.");
     }
 
-    const user = await User.findOne({ _id: req.user._id });
-
+    const user = await User.findById(req.user._id);
     if (!user) {
-        throw new ErrorHandler(401, "User not found");
+        throw new ErrorHandler(404, "User not found");
     }
 
     if (!(await user.comparePassword(password))) {
-        throw new ErrorHandler(401, "Invalid password, please fill the correct early password (for security purposes)");
+        throw new ErrorHandler(401, "Incorrect current password.");
     }
 
     user.password = newPassword;
+    user.refreshToken = null;
     await user.save();
 
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax", // Match login/logout
+        path: "/",
+    };
+    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("accessToken", cookieOptions);
+
     res.status(200).json({
-        message: "Password updated successfully",
+        message: "Password updated successfully. Please log in again.", // Inform user about re-login
         success: true,
     });
 });
 
 export const postDeleteAccount = ErrorWrapper(async (req, res, next) => {
+    // Keep validation as is
     const { password } = req.body;
-    const requiredFields = ["password"];
-    const missingFields = requiredFields.filter((field) => !req.body[field]);
-
-    if (missingFields.length > 0) {
-        throw new ErrorHandler(400, `Missing required fields: ${missingFields.join(", ")}`);
+    if (!password) {
+        throw new ErrorHandler(400, "Password is required to delete account.");
     }
 
-    const user = await User.findOne({ _id: req.user._id });
-
+    const user = await User.findById(req.user._id); // Use findById
     if (!user) {
-        throw new ErrorHandler(401, "User not found");
+        throw new ErrorHandler(404, "User not found."); // Changed to 404
     }
 
     if (!(await user.comparePassword(password))) {
-        throw new ErrorHandler(401, "Invalid password, please fill the correct early password (for security purposes)");
+        // Use a more specific error message
+        throw new ErrorHandler(401, "Incorrect password. Account not deleted.");
     }
 
-    await user.deleteOne();
+    await user.deleteOne(); // Use deleteOne()
+
+    // Clear cookies after successful deletion
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax", // Match login/logout
+        path: "/",
+    };
+    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("accessToken", cookieOptions);
+
     res.status(200).json({
         message: "Account deleted successfully",
         success: true,

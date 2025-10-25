@@ -21,6 +21,7 @@ export const verifyJWT = ErrorWrapper(async (req, res, next) => {
         req.user = user; // To pull our the user anywhere.
         next(); // next request is handled
     } catch (err) {
+        console.error("JWT Verification Error:", err.name, err.message);
         throw new ErrorHandler(500, "Internal Server Error");
     }
 });
