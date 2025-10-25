@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
@@ -14,8 +14,63 @@ import PrivacyPolicy from "./pages/LegalPages/PrivacyPolicy";
 import TermsOfService from "./pages/LegalPages/TermsOfService";
 
 const App = () => {
-    const { user, checkAuth, isCheckingAuth, onlineUsers } = useUserAuthStore();
+    const {
+        user,
+        checkAuth,
+        isCheckingAuth,
+        onlineUsers,
+        logoutSuccess,
+        signupSuccess,
+        passwordUpdateSuccess,
+        deleteAccountSuccess,
+        resetLogoutSuccess,
+        resetSignupSuccess,
+        resetPasswordUpdateSuccess,
+        resetDeleteAccountSuccess,
+    } = useUserAuthStore();
+
+    const navigate = useNavigate();
     const [navbarPosition, setNavbarPosition] = useState("left");
+
+    // redirects
+    useEffect(() => {
+        if (logoutSuccess) {
+            navigate("/login");
+            resetLogoutSuccess();
+        }
+    }, [logoutSuccess, navigate, resetLogoutSuccess]);
+
+    useEffect(() => {
+        if (signupSuccess) {
+            navigate("/login");
+            resetSignupSuccess();
+        }
+    }, [signupSuccess, navigate, resetSignupSuccess]);
+
+    useEffect(() => {
+        if (passwordUpdateSuccess) {
+            navigate("/login");
+            resetPasswordUpdateSuccess();
+        }
+    }, [passwordUpdateSuccess, navigate, resetPasswordUpdateSuccess]);
+
+    useEffect(() => {
+        if (deleteAccountSuccess) {
+            navigate("/login");
+            resetDeleteAccountSuccess();
+        }
+    }, [deleteAccountSuccess, navigate, resetDeleteAccountSuccess]);
+
+    useEffect(() => {
+        const checkSessionExpired = setInterval(() => {
+            if (getSessionExpiredFlag()) {
+                navigate("/login");
+                resetSessionExpiredFlag();
+            }
+        }, 1000);
+
+        return () => clearInterval(checkSessionExpired);
+    }, [navigate]);
 
     // check if the user is logged in or not
     useEffect(() => {

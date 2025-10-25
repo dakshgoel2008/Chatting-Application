@@ -18,10 +18,14 @@ export const useUserAuthStore = create((set, get) => ({
     isLoggedIn: false,
     isDeletingAccount: false,
 
+    logoutSuccess: false,
+    signupSuccess: false,
+    passwordUpdateSuccess: false,
+    deleteAccountSuccess: false,
+
     checkAuth: async () => {
         set({ isCheckingAuth: true });
         try {
-            // Only check auth if tokens exist
             const accessToken = localStorage.getItem("accessToken");
             const refreshToken = localStorage.getItem("refreshToken");
 
@@ -33,12 +37,10 @@ export const useUserAuthStore = create((set, get) => ({
 
             const res = await axiosInstance.get("/auth/check");
             set({ user: res.data, isLoggedIn: !!res.data });
-            // socket: Connect only after state is set
             setTimeout(() => get().connectSocket(), 100);
         } catch (err) {
             console.error("Auth check failed:", err);
             set({ user: null, isLoggedIn: false });
-            // Clear tokens if auth check fails
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
         } finally {
@@ -46,20 +48,16 @@ export const useUserAuthStore = create((set, get) => ({
         }
     },
 
-    signUp: async (data, navigate) => {
-        set({ isSigningUp: true });
+    signUp: async (data) => {
+        set({ isSigningUp: true, signupSuccess: false });
         try {
             const res = await axiosInstance.post("/auth/signup", data);
             toast.success("Signed up successfully! Please log in.");
 
-            setTimeout(() => {
-                if (navigate) {
-                    navigate("/login");
-                }
-            }, 500);
+            set({ signupSuccess: true });
         } catch (err) {
             console.error("Signup error:", err);
-            toast.error(err?.response?.data?.message || "Signup failed");
+            toast.error(err?.response?.data?.message || "Signup failed. Please try again.");
         } finally {
             set({ isSigningUp: false });
         }
@@ -69,11 +67,8 @@ export const useUserAuthStore = create((set, get) => ({
         set({ isLoggingIn: true });
         try {
             const res = await axiosInstance.post("/auth/login", data);
-
-            // Extract user and tokens from response
             const { user, accessToken, refreshToken } = res.data;
 
-            // Store tokens in localStorage
             if (accessToken) {
                 localStorage.setItem("accessToken", accessToken);
             }
@@ -81,17 +76,12 @@ export const useUserAuthStore = create((set, get) => ({
                 localStorage.setItem("refreshToken", refreshToken);
             }
 
-            // Update state with user data
             set({ user: user, isLoggedIn: true });
-
             toast.success("Logged in successfully");
-
-            // Connect socket after state update
             setTimeout(() => get().connectSocket(), 100);
         } catch (err) {
             console.error("Login error:", err);
-            toast.error(err?.response?.data?.message || err?.message || "Login failed. Please try again.");
-            // Clear any partial data
+            toast.error(err?.response?.data?.message || "Login failed. Please try again.");
             set({ user: null, isLoggedIn: false });
         } finally {
             set({ isLoggingIn: false });
@@ -99,41 +89,28 @@ export const useUserAuthStore = create((set, get) => ({
     },
 
     logOut: async () => {
+        set({ logoutSuccess: false });
         try {
-            // Disconnect socket first
             get().disconnectSocket();
-
-            // Call logout endpoint
             await axiosInstance.post("/auth/logout");
 
-            // Clear state
             set({ user: null, isLoggedIn: false, onlineUsers: [] });
-
-            // Clear tokens from localStorage
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
 
             toast.success("Logged out successfully");
 
-            // Redirect after a small delay
-            setTimeout(() => {
-                window.location.href = "/login";
-            }, 500);
+            set({ logoutSuccess: true });
         } catch (err) {
             console.error("Logout error:", err);
-
-            // Even if logout fails, clear local state
             get().disconnectSocket();
             set({ user: null, isLoggedIn: false, onlineUsers: [] });
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
 
-            toast.error(err?.response?.data?.message || err?.message || "Logout failed");
+            toast.error(err?.response?.data?.message || "Logout failed");
 
-            // Still redirect to login
-            setTimeout(() => {
-                window.location.href = "/login";
-            }, 500);
+            set({ logoutSuccess: true });
         }
     },
 
@@ -141,68 +118,50 @@ export const useUserAuthStore = create((set, get) => ({
         set({ isUpdatingProfile: true });
         try {
             const res = await axiosInstance.put("/auth/update-profile", data);
-
-            // Extract updated user from response
             const updatedUser = res.data.user;
-
             set({ user: updatedUser });
             toast.success("Profile updated successfully");
         } catch (err) {
             console.error("Update Profile error:", err);
-            toast.error(err?.response?.data?.message || err?.message || "Update Profile failed. Please try again.");
+            toast.error(err?.response?.data?.message || "Update Profile failed. Please try again.");
         } finally {
             set({ isUpdatingProfile: false });
         }
     },
 
     updatePassword: async (data) => {
-        set({ isUpdatingPassword: true });
+        set({ isUpdatingPassword: true, passwordUpdateSuccess: false });
         try {
             const res = await axiosInstance.put("/auth/update-password", data);
-
-            // Password update requires re-login
             toast.success("Password updated successfully! Please log in again.");
 
-            // Disconnect socket and clear state
             get().disconnectSocket();
             set({ user: null, isLoggedIn: false });
-
-            // Clear tokens
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
 
-            // Redirect to login
-            setTimeout(() => {
-                window.location.href = "/login";
-            }, 1000);
+            set({ passwordUpdateSuccess: true });
         } catch (err) {
             console.error("Update Password error:", err);
-            toast.error(err?.response?.data?.message || err?.message || "Update Password failed. Please try again.");
+            toast.error(err?.response?.data?.message || "Update Password failed. Please try again.");
         } finally {
             set({ isUpdatingPassword: false });
         }
     },
 
     deleteAccount: async (data = {}) => {
-        set({ isDeletingAccount: true });
+        set({ isDeletingAccount: true, deleteAccountSuccess: false });
         try {
-            // Disconnect socket first
             get().disconnectSocket();
-
             await axiosInstance.post("/auth/delete-account", data);
 
-            // Clear state
             set({ user: null, isLoggedIn: false, onlineUsers: [] });
-
-            // Clear tokens
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
 
             toast.success("Account deleted successfully");
 
-            setTimeout(() => {
-                window.location.href = "/login";
-            }, 500);
+            set({ deleteAccountSuccess: true });
         } catch (err) {
             console.error("Delete Account error:", err);
             let errorMessage = "Delete Account failed. Please try again.";
@@ -218,22 +177,24 @@ export const useUserAuthStore = create((set, get) => ({
         }
     },
 
+    resetSignupSuccess: () => set({ signupSuccess: false }),
+    resetLogoutSuccess: () => set({ logoutSuccess: false }),
+    resetPasswordUpdateSuccess: () => set({ passwordUpdateSuccess: false }),
+    resetDeleteAccountSuccess: () => set({ deleteAccountSuccess: false }),
+
     connectSocket: () => {
         const { user, socket: currentSocket } = get();
 
-        // Check if user exists AND has an _id
         if (!user || !user._id) {
             console.log("connectSocket: No user or user._id found, skipping connection.");
             return;
         }
 
-        // Check if a socket connection already exists and is connected
         if (currentSocket?.connected) {
             console.log("connectSocket: Socket already connected.");
             return;
         }
 
-        // If there's a disconnected socket, clean it up first
         if (currentSocket && !currentSocket.connected) {
             console.log("connectSocket: Cleaning up old socket connection.");
             currentSocket.removeAllListeners();
@@ -245,13 +206,12 @@ export const useUserAuthStore = create((set, get) => ({
 
         const newSocket = io(socketUrl, {
             query: { userId: user._id },
-            transports: ["websocket", "polling"], // Add polling as fallback
+            transports: ["websocket", "polling"],
             reconnectionAttempts: 5,
             reconnectionDelay: 3000,
-            timeout: 10000, // Add timeout
+            timeout: 10000,
         });
 
-        // Set up event listeners BEFORE connecting
         newSocket.on("connect", () => {
             console.log("Socket connected:", newSocket.id);
             toast.success("Real-time connection established!");
@@ -269,27 +229,20 @@ export const useUserAuthStore = create((set, get) => ({
 
         newSocket.on("disconnect", (reason) => {
             console.log("Socket disconnected:", reason);
-
-            // Only show toast for unexpected disconnections
             if (reason !== "io client disconnect") {
                 toast.error("Connection lost. Reconnecting...");
             }
-
-            // Clear online users but keep socket for reconnection
             set({ onlineUsers: [] });
         });
 
-        // Update state with the new socket instance
         set({ socket: newSocket });
-
-        // The socket will auto-connect after listeners are set up
     },
 
     disconnectSocket: () => {
         const socket = get().socket;
         if (socket) {
             console.log("Disconnecting socket...");
-            socket.removeAllListeners(); // Remove all listeners to prevent memory leaks
+            socket.removeAllListeners();
             socket.disconnect();
             set({ socket: null, onlineUsers: [] });
         }

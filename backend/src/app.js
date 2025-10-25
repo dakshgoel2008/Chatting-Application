@@ -66,29 +66,26 @@ console.log("   Allowed Origins:", allowedOrigins);
 app.use(
     cors({
         origin: function (origin, callback) {
-            // Log every request
             console.log(`📨 Request from origin: ${origin || "NO ORIGIN HEADER"}`);
 
-            // IMPORTANT: Allow requests with no origin
-            // This handles: health checks, server-to-server, mobile apps, Postman, curl
+            // ✅ ADD: Log the allowed origins for debugging
+            console.log(`📋 Allowed origins: ${JSON.stringify(allowedOrigins)}`);
+
             if (!origin) {
                 console.log("✅ Allowing request with no origin header");
                 return callback(null, true);
             }
 
-            // Check if origin is in the allowed list
             if (allowedOrigins.includes(origin)) {
                 console.log(`✅ Origin ${origin} is in allowed list`);
                 return callback(null, true);
             }
 
-            // If we reach here, origin is not allowed
             console.warn(`❌ CORS BLOCKED - Origin not in allowed list: ${origin}`);
             console.warn(`📋 Allowed origins: ${JSON.stringify(allowedOrigins)}`);
 
-            // In development, you might want to be more permissive for debugging
             if (!isProduction) {
-                console.log("⚠️  DEV MODE: Allowing anyway for debugging");
+                console.log("⚠DEV MODE: Allowing anyway for debugging");
                 return callback(null, true);
             }
 
