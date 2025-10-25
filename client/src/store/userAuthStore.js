@@ -21,6 +21,16 @@ export const useUserAuthStore = create((set, get) => ({
     checkAuth: async () => {
         set({ isCheckingAuth: true });
         try {
+            // Only check auth if tokens exist
+            const accessToken = localStorage.getItem("accessToken");
+            const refreshToken = localStorage.getItem("refreshToken");
+
+            if (!accessToken || !refreshToken) {
+                console.log("No tokens found, skipping auth check");
+                set({ user: null, isLoggedIn: false, isCheckingAuth: false });
+                return;
+            }
+
             const res = await axiosInstance.get("/auth/check");
             set({ user: res.data, isLoggedIn: !!res.data });
             // socket: Connect only after state is set
