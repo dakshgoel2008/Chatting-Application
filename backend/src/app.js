@@ -12,7 +12,6 @@ import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/message.js";
 import { app, server } from "./utils/socket.js";
 
-// const app = express();       // socket.js {removing duplicacy}
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 4444;
@@ -27,7 +26,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(
     helmet({
         crossOriginResourcePolicy: { policy: "cross-origin" },
-        crossOriginEmbedderPolicy: false, // Changed for Express 4 compatibility
+        crossOriginEmbedderPolicy: false,
         crossOriginOpenerPolicy: { policy: "same-origin" },
     })
 );
@@ -36,34 +35,64 @@ app.use(
     helmet.contentSecurityPolicy({
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "https://trusted.cdn.com"], // for adding CDNs
+            scriptSrc: ["'self'", "https://trusted.cdn.com"],
             styleSrc: ["'self'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "https:"], // Added https: for external images
+            imgSrc: ["'self'", "data:", "https:"],
         },
     })
 );
 
-// CORS:
+// CORS Configuration - FIXED VERSION
 const devOrigins = process.env.CORS_ORIGINS ? JSON.parse(process.env.CORS_ORIGINS) : ["http://localhost:5173"];
-const prodOrigin = process.env.PRODUCTION_CLIENT_URL; // Add this to your production env variables
-const allowedOrigins = isProduction ? [prodOrigin] : devOrigins;
+const prodOrigin = process.env.PRODUCTION_CLIENT_URL;
+
+// Build allowed origins array, filtering out any undefined/null values
+let allowedOrigins = [];
+if (isProduction) {
+    if (prodOrigin) {
+        // Support multiple production origins if comma-separated
+        allowedOrigins = prodOrigin.split(",").map((origin) => origin.trim());
+    }
+} else {
+    allowedOrigins = devOrigins;
+}
+
+// Log CORS configuration on startup
+console.log("🔒 CORS Configuration:");
+console.log("   Environment:", isProduction ? "PRODUCTION" : "DEVELOPMENT");
+console.log("   Allowed Origins:", allowedOrigins);
 
 app.use(
     cors({
         origin: function (origin, callback) {
-            // Allow requests with no origin (like mobile apps, Postman, server-to-server)
+            // Log every request
+            console.log(`📨 Request from origin: ${origin || "NO ORIGIN HEADER"}`);
+
+            // IMPORTANT: Allow requests with no origin
+            // This handles: health checks, server-to-server, mobile apps, Postman, curl
             if (!origin) {
+                console.log("✅ Allowing request with no origin header");
                 return callback(null, true);
             }
 
-            // Check if origin is in allowed list
-            if (allowedOrigins.indexOf(origin) !== -1) {
-                callback(null, true);
-            } else {
-                console.warn(`CORS blocked for origin: ${origin}`);
-                callback(new Error("Not allowed by CORS"));
+            // Check if origin is in the allowed list
+            if (allowedOrigins.includes(origin)) {
+                console.log(`✅ Origin ${origin} is in allowed list`);
+                return callback(null, true);
             }
+
+            // If we reach here, origin is not allowed
+            console.warn(`❌ CORS BLOCKED - Origin not in allowed list: ${origin}`);
+            console.warn(`📋 Allowed origins: ${JSON.stringify(allowedOrigins)}`);
+
+            // In development, you might want to be more permissive for debugging
+            if (!isProduction) {
+                console.log("⚠️  DEV MODE: Allowing anyway for debugging");
+                return callback(null, true);
+            }
+
+            return callback(new Error("Not allowed by CORS"));
         },
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -85,16 +114,25 @@ if (isProduction) {
 
 // DB Connection:
 const dbPath = isProduction ? process.env.PRODUCTION_DB_PATH : process.env.DB_PATH;
+
+if (!dbPath) {
+    console.error("❌ Database connection string not found!");
+    console.error("   Please set DB_PATH (dev) or PRODUCTION_DB_PATH (prod) environment variable");
+    process.exit(1);
+}
+
 mongoose
     .connect(dbPath)
     .then(() => {
         server.listen(PORT, () => {
-            console.log(`Server running in ${process.env.NODE_ENV || "development"} mode on http://localhost:${PORT}`);
-            console.log(`Connected to DB: ${isProduction ? "Production DB" : "Development DB"}`);
-            console.log(`Allowed CORS origins: ${allowedOrigins.join(", ")}`);
+            console.log("✅ Server Started Successfully!");
+            console.log(`   Mode: ${process.env.NODE_ENV || "development"}`);
+            console.log(`   URL: http://localhost:${PORT}`);
+            console.log(`   Database: ${isProduction ? "Production" : "Development"}`);
+            console.log(`   Allowed Origins: ${allowedOrigins.join(", ")}`);
         });
     })
     .catch((err) => {
-        console.error("Database connection failed:", err);
-        process.exit(1); // Exit if DB connection fails
+        console.error("❌ Database connection failed:", err);
+        process.exit(1);
     });

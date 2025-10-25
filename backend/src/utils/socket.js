@@ -7,13 +7,43 @@ const server = http.createServer(app);
 
 const isProduction = process.env.NODE_ENV === "production";
 const devOrigins = process.env.CORS_ORIGINS ? JSON.parse(process.env.CORS_ORIGINS) : ["http://localhost:5173"];
-const prodOrigin = process.env.PRODUCTION_CLIENT_URL; // Add this to your production env variables
-const allowedOrigins = isProduction ? [prodOrigin] : devOrigins;
+const prodOrigin = process.env.PRODUCTION_CLIENT_URL;
+
+// Build allowed origins array
+let allowedOrigins = [];
+if (isProduction) {
+    if (prodOrigin) {
+        allowedOrigins = prodOrigin.split(",").map((origin) => origin.trim());
+    }
+} else {
+    allowedOrigins = devOrigins;
+}
+
+console.log("🔌 Socket.IO CORS Configuration:", allowedOrigins);
 
 const io = new Server(server, {
     cors: {
-        origin: allowedOrigins,
+        origin: function (origin, callback) {
+            // Allow requests with no origin (mobile apps, etc.)
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            // Check if origin is allowed
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            // In development, be permissive
+            if (!isProduction) {
+                return callback(null, true);
+            }
+
+            console.warn(`❌ Socket.IO: Origin not allowed: ${origin}`);
+            return callback(new Error("Not allowed by CORS"));
+        },
         credentials: true,
+        methods: ["GET", "POST"],
     },
 });
 
