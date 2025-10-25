@@ -129,12 +129,31 @@ const MessageInput = () => {
 
         const formData = new FormData();
         formData.append("text", text);
-        if (file) formData.append("file", file);
+
+        // ✅ FIXED: Append file with correct field name based on type
+        if (file) {
+            console.log("Sending file:", file.name, file.type);
+
+            // Determine correct field name based on MIME type
+            let fieldName = "file"; // default
+
+            if (file.type.startsWith("image/")) {
+                fieldName = "image";
+            } else if (file.type.startsWith("video/")) {
+                fieldName = "video";
+            } else if (file.type.startsWith("audio/")) {
+                fieldName = "audio";
+            }
+
+            console.log("Using field name:", fieldName);
+            formData.append(fieldName, file);
+        }
+
         await sendMessage(formData);
 
         setText("");
         removeAttachment();
-        setShowEmojiPicker(false); // Close emoji picker after sending
+        setShowEmojiPicker(false);
     };
 
     const handleStartRecording = async () => {

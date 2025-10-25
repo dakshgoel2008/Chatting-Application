@@ -51,7 +51,7 @@ export const useUserChatStore = create((set, get) => ({
 
     reactToMessage: async (messageId, emoji) => {
         try {
-            const res = await axiosInstance.post(`/message/${messageId}/react`, { emoji });
+            const res = await axiosInstance.post(`/message/react/${messageId}`, { emoji });
             const updatedMessage = res.data;
             set((state) => ({
                 message: state.message.map((msg) => (msg._id === messageId ? updatedMessage : msg)),
@@ -60,11 +60,10 @@ export const useUserChatStore = create((set, get) => ({
             toast.error("Failed to react to message");
         }
     },
-    
 
     deleteMessage: async (messageId) => {
         try {
-            await axiosInstance.delete(`/message/${messageId}`);
+            await axiosInstance.delete(`/message/remove/${messageId}`);
             set((state) => ({
                 message: state.message.filter((msg) => msg._id !== messageId),
             }));

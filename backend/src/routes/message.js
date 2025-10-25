@@ -6,20 +6,17 @@ import upload from "../utils/multer.js";
 const router = express.Router();
 
 router.get("/users", verifyJWT, getUsers);
+
+router.post("/react/:messageId", verifyJWT, postReactToMessage);
+router.delete("/remove/:messageId", verifyJWT, deleteMessage);
+
 router.get("/:id", verifyJWT, getMessages);
+
 router.post(
     "/send/:id",
     verifyJWT,
-    upload.fields([
-        { name: "image", maxCount: 1 },
-        { name: "video", maxCount: 1 },
-        { name: "audio", maxCount: 1 },
-        { name: "file", maxCount: 1 },
-    ]),
+    upload.any(), // Accept any file field
     postSendMessage
-); // send message to the user.
-
-router.post("/:messageId/react", verifyJWT, postReactToMessage);
-router.delete("/:messageId", verifyJWT, deleteMessage);
+);
 
 export default router;

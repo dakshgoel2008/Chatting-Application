@@ -24,14 +24,12 @@ export const getUsers = ErrorWrapper(async (req, res, next) => {
 
 export const getMessages = ErrorWrapper(async (req, res, next) => {
     try {
-        const { id: receiverId } = req.params; // id of the user whom we want to chat with.
-        // after that just renaming it.
+        const { id: receiverId } = req.params;
         if (!receiverId) {
             throw new ErrorHandler(400, "User id is required");
         }
-        const myId = req.user._id; // id of the logged in user.
+        const myId = req.user._id;
         const messages = await Message.find({
-            // just a filter to get the messages between two users.
             $or: [
                 { senderId: myId, receiverId: receiverId },
                 { senderId: receiverId, receiverId: myId },
@@ -39,7 +37,7 @@ export const getMessages = ErrorWrapper(async (req, res, next) => {
         });
         res.status(201).json({
             message: "Messages fetched successfully",
-            message: messages, // array of the messages that we wanna see as history.
+            message: messages,
             success: true,
         });
     } catch (error) {
@@ -51,56 +49,80 @@ export const getMessages = ErrorWrapper(async (req, res, next) => {
 export const postSendMessage = ErrorWrapper(async (req, res, next) => {
     try {
         const startTime = Date.now();
-        const { id: receiverId } = req.params; // id of the user whom we want to chat with.
-        // after that just renaming it.
+        const { id: receiverId } = req.params;
+
         if (!receiverId) {
             throw new ErrorHandler(400, "User id is required");
         }
-        const senderId = req.user._id; // id of the logged in user.
 
-        // checking for the files to send.
+        const senderId = req.user._id;
         const { text } = req.body;
-        // Initialize file URLs to null (in case no files are uploaded)
+
+        console.log("\n=== Processing Message ===");
+        console.log("Receiver ID:", receiverId);
+        console.log("Sender ID:", senderId);
+        console.log("Text:", text);
+        console.log("Files received:", req.files);
+
+        // Initialize file URLs
         let imageUrl = null;
         let videoUrl = null;
         let audioUrl = null;
         let fileUrl = null;
 
-        if (req.files?.image?.[0]?.buffer) {
-            // Check for buffer
-            const s = Date.now();
-            const imageResult = await uploadOnCloudinary(req.files.image[0].buffer, { resource_type: "image" }); // Pass buffer
-            imageUrl = imageResult.secure_url; // Assuming result structure
-            const e = Date.now() - s;
-            console.log(`[METRICS] Image upload time: ${e}ms`);
-        }
-        if (req.files?.video?.[0]?.buffer) {
-            // Check for buffer
-            const s = Date.now();
-            const videoResult = await uploadOnCloudinary(req.files.video[0].buffer, { resource_type: "video" }); // Pass buffer
-            videoUrl = videoResult.secure_url;
-            const e = Date.now() - s;
-            console.log(`[METRICS] Video upload time: ${e}ms`);
-        }
-        if (req.files?.audio?.[0]?.buffer) {
-            // Check for buffer
-            const s = Date.now();
-            // Cloudinary often treats audio as video resource type
-            const audioResult = await uploadOnCloudinary(req.files.audio[0].buffer, { resource_type: "video" }); // Pass buffer
-            audioUrl = audioResult.secure_url;
-            const e = Date.now() - s;
-            console.log(`[METRICS] Audio upload time: ${e}ms`);
-        }
-        if (req.files?.file?.[0]?.buffer) {
-            // Check for buffer
-            const s = Date.now();
-            // Explicitly set resource_type to 'raw' for generic files
-            const fileResult = await uploadOnCloudinary(req.files.file[0].buffer, { resource_type: "raw" }); // Pass buffer
-            fileUrl = fileResult.secure_url;
-            const e = Date.now() - s;
-            console.log(`[METRICS] File upload time: ${e}ms`);
+        // ✅ FIXED: Process files based on MIME type, not field name
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                const mimetype = file.mimetype.toLowerCase();
+                console.log(`Processing file: ${file.originalname}, MIME: ${mimetype}`);
+
+                try {
+                    // Detect file type by MIME
+                    if (mimetype.startsWith("image/")) {
+                        console.log("Uploading as IMAGE");
+                        const s = Date.now();
+                        const result = await uploadOnCloudinary(file.buffer, {
+                            resource_type: "image",
+                            folder: "chat-images",
+                        });
+                        imageUrl = result.secure_url;
+                        console.log(`Image uploaded: ${imageUrl} (${Date.now() - s}ms)`);
+                    } else if (mimetype.startsWith("video/")) {
+                        console.log("Uploading as VIDEO");
+                        const s = Date.now();
+                        const result = await uploadOnCloudinary(file.buffer, {
+                            resource_type: "video",
+                            folder: "chat-videos",
+                        });
+                        videoUrl = result.secure_url;
+                        console.log(`Video uploaded: ${videoUrl} (${Date.now() - s}ms)`);
+                    } else if (mimetype.startsWith("audio/")) {
+                        console.log("Uploading as AUDIO");
+                        const s = Date.now();
+                        const result = await uploadOnCloudinary(file.buffer, {
+                            resource_type: "video", // Cloudinary treats audio as video
+                            folder: "chat-audio",
+                        });
+                        audioUrl = result.secure_url;
+                        console.log(`Audio uploaded: ${audioUrl} (${Date.now() - s}ms)`);
+                    } else {
+                        console.log("Uploading as FILE/DOCUMENT");
+                        const s = Date.now();
+                        const result = await uploadOnCloudinary(file.buffer, {
+                            resource_type: "raw",
+                            folder: "chat-files",
+                        });
+                        fileUrl = result.secure_url;
+                        console.log(`File uploaded: ${fileUrl} (${Date.now() - s}ms)`);
+                    }
+                } catch (uploadError) {
+                    console.error(`Error uploading ${file.originalname}:`, uploadError);
+                    throw new ErrorHandler(500, `Failed to upload ${file.originalname}`);
+                }
+            }
         }
 
+        // Create message
         const message = await Message.create({
             senderId,
             receiverId,
@@ -111,17 +133,21 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
             file: fileUrl,
         });
 
+        console.log("Message created:", message._id);
+
+        // Send via Socket.IO
         const receiverSocketId = getReceiverSocketId(receiverId);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("newMessage", message);
+            console.log("Message sent via socket to:", receiverId);
         }
 
         const responseTime = Date.now() - startTime;
-        console.log(`[METRICS] Send Message - Response Time: ${responseTime}ms`);
+        console.log(`[METRICS] Send Message - Total Response Time: ${responseTime}ms`);
 
         res.status(201).json({
             message: "Message sent successfully",
-            message, // array of the messages that we wanna see as history.
+            message: message,
             success: true,
         });
     } catch (error) {
@@ -129,6 +155,7 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
         throw new ErrorHandler(500, "Can't send the message (Internal Server Error)", [error.message]);
     }
 });
+
 export const postReactToMessage = ErrorWrapper(async (req, res) => {
     const { messageId } = req.params;
     const { emoji } = req.body;

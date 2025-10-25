@@ -1,10 +1,9 @@
 import multer from "multer";
-import path from "path";
 
-//FUN, MIME:Multipurpose Internet Mail Extensions
+// MIME type mappings
 const validFileTypes = {
-    image: ["image/jpeg", "image/png", "image/gif", "image/jpg", "image/webp"],
-    video: ["video/mp4", "video/webm", "video/ogg", "video/avi", "video/mov"],
+    image: ["image/jpeg", "image/png", "image/gif", "image/jpg", "image/webp", "image/svg+xml"],
+    video: ["video/mp4", "video/webm", "video/ogg", "video/avi", "video/mov", "video/quicktime"],
     audio: ["audio/mpeg", "audio/wav", "audio/ogg", "audio/webm", "audio/mp3", "audio/mp4", "audio/x-m4a"],
     file: [
         "application/pdf",
@@ -17,53 +16,59 @@ const validFileTypes = {
     ],
 };
 
-// Setting up disk storage
-// const storage = multer.diskStorage({
-//     destination: function (req, file, cb) {
-//         cb(null, "./public/uploads");
-//     },
-
-//     filename: function (req, file, cb) {
-//         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-//         const ext = path.extname(file.originalname);
-//         cb(null, file.fieldname + "-" + uniqueSuffix + ext);
-//     },
-// });
-
 const storage = multer.memoryStorage();
 
-// File filter to allow specific MIME types
+// ✅ FIXED: Better file type detection
 const fileFilter = (req, file, cb) => {
+    console.log(`\n=== Multer File Filter ===`);
     console.log(`Field name: ${file.fieldname}`);
     console.log(`MIME type: ${file.mimetype}`);
     console.log(`Original name: ${file.originalname}`);
 
-    const allAllowedTypes = [
-        ...validFileTypes.image,
-        ...validFileTypes.video,
-        ...validFileTypes.audio,
-        ...validFileTypes.file,
-    ];
+    const mimetype = file.mimetype.toLowerCase();
 
-    console.log(`All allowed types:`, allAllowedTypes);
-    console.log(`Audio types specifically:`, validFileTypes.audio);
-    console.log(`Is audio/webm included?`, allAllowedTypes.includes("audio/webm"));
-    console.log(`Does current file match?`, allAllowedTypes.includes(file.mimetype));
-
-    if (allAllowedTypes.includes(file.mimetype)) {
-        console.log(`File accepted: ${file.mimetype}`);
+    // Check if it's an image
+    if (validFileTypes.image.includes(mimetype)) {
+        console.log(`✅ Detected as IMAGE`);
+        // Override fieldname to ensure it goes to correct field
+        file.fieldname = "image";
         return cb(null, true);
-    } else {
-        console.log(`File rejected: ${file.mimetype}`);
-        return cb(new Error(`Invalid file type: ${file.mimetype}`), false);
     }
+
+    // Check if it's a video
+    if (validFileTypes.video.includes(mimetype)) {
+        console.log(`✅ Detected as VIDEO`);
+        file.fieldname = "video";
+        return cb(null, true);
+    }
+
+    // Check if it's audio
+    if (validFileTypes.audio.includes(mimetype)) {
+        console.log(`✅ Detected as AUDIO`);
+        file.fieldname = "audio";
+        return cb(null, true);
+    }
+
+    // Check if it's a document
+    if (validFileTypes.file.includes(mimetype)) {
+        console.log(`✅ Detected as FILE/DOCUMENT`);
+        file.fieldname = "file";
+        return cb(null, true);
+    }
+
+    // If no match, reject
+    console.log(`❌ File rejected: Unknown type ${mimetype}`);
+    return cb(
+        new Error(`Invalid file type: ${mimetype}. Only images, videos, audio, and documents are allowed.`),
+        false
+    );
 };
 
-// Initialize multer with storage and fileFilter
+// ✅ FIXED: Single file upload with dynamic field name
 const upload = multer({
     storage,
     fileFilter,
-    limits: { fileSize: 50 * 1024 * 1024 }, // Limited file size: 50MB
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
 });
 
 export default upload;
