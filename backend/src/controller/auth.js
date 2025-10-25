@@ -108,9 +108,10 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
 
     const cookieOptions = {
         httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
+        // Remove the domain property - let the browser handle it
     };
 
     res.cookie("refreshToken", refreshToken, {
@@ -132,12 +133,15 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
                 profileImage: userForResponse.profileImage,
                 createdAt: userForResponse.createdAt,
             },
+            accessToken, // Send tokens in response as well
+            refreshToken, // Frontend can store these
             success: true,
         });
 });
 
 export const postLogout = ErrorWrapper(async (req, res, next) => {
-    const { refreshToken } = req.cookies;
+    // Get refresh token from cookies or header
+    let refreshToken = req.cookies?.refreshToken || req.headers["x-refresh-token"];
 
     if (refreshToken) {
         try {
@@ -153,8 +157,8 @@ export const postLogout = ErrorWrapper(async (req, res, next) => {
 
     const cookieOptions = {
         httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
     };
 
@@ -264,8 +268,8 @@ export const putUpdatePassword = ErrorWrapper(async (req, res, next) => {
 
     const cookieOptions = {
         httpOnly: true,
-        secure: true,
-        sameSite: "lax", // Match login/logout
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
     };
     res.clearCookie("refreshToken", cookieOptions);
@@ -299,8 +303,8 @@ export const postDeleteAccount = ErrorWrapper(async (req, res, next) => {
     // Clear cookies after successful deletion
     const cookieOptions = {
         httpOnly: true,
-        secure: true,
-        sameSite: "lax", // Match login/logout
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
     };
     res.clearCookie("refreshToken", cookieOptions);

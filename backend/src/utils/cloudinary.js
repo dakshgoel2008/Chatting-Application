@@ -1,6 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import dotenv from "dotenv";
+import streamifier from "streamifier";
+
 dotenv.config();
 
 cloudinary.config({
@@ -65,7 +67,10 @@ export const getResourceType = (mimeType) => {
 // Enhanced upload function that automatically determines resource type
 export const smartUploadOnCloudinary = async (filePath, mimeType, options = {}) => {
     const resourceType = getResourceType(mimeType);
-    return await uploadOnCloudinary(filePath, resourceType, options);
+    return await uploadOnCloudinary(filePath, {
+        resource_type: resourceType,
+        ...options,
+    });
 };
 
 export const uploadDefaultGoogleImageOnCloudinary = async (imageUrl) => {
