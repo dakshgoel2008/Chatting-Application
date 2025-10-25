@@ -130,40 +130,61 @@ export const useUserAuthStore = create((set, get) => ({
         }
     },
 
-    // *** MODIFIED connectSocket ***
     connectSocket: () => {
-        const { user } = get();
-        if (!user || get().socket?.connected) return;
+        const { user, socket: currentSocket } = get(); // Get current user and socket state
+
+        // 1. Check if user exists AND has an _id
+        // 2. Check if a socket connection already exists and is connected
+        if (!user || !user._id || currentSocket?.connected) {
+            if (!user || !user._id) {
+                console.log("connectSocket: No user or user._id found, skipping connection.");
+            }
+            if (currentSocket?.connected) {
+                console.log("connectSocket: Socket already connected.");
+            }
+            return; // Don't connect if no user ID or already connected
+        }
+
+        console.log(`connectSocket: Attempting to connect for user ${user._id}`); // Log connection attempt
 
         // Use the socketUrl defined at the top
-        const socket = io(socketUrl, {
-            query: { userId: user._id },
+        const newSocket = io(socketUrl, {
+            query: { userId: user._id }, // Pass the confirmed user._id
             transports: ["websocket"],
+            // Add reconnection attempts for more robustness
+            reconnectionAttempts: 5,
+            reconnectionDelay: 3000,
         });
-        socket.connect();
 
-        set({ socket: socket });
+        newSocket.connect();
 
-        socket.on("getOnlineUsers", (users) => {
+        // Update state with the new socket instance
+        set({ socket: newSocket });
+
+        // Move event listeners setup here, associated with the newSocket instance
+        newSocket.on("getOnlineUsers", (users) => {
             console.log("Online Users:", users);
             set({ onlineUsers: users });
         });
 
-        // Add error handling
-        socket.on("connect_error", (err) => {
-            console.error("Socket connection error:", err.message);
+        newSocket.on("connect_error", (err) => {
+            console.error("Socket connection error:", err.message, err.cause);
             toast.error(`Socket connection failed: ${err.message}`);
+            // Optional: You might want to disconnect or clear socket state here on persistent errors
+            set({ socket: null }); // Clear socket state on connection error
         });
-        socket.on("connect", () => {
-            console.log("Socket connected:", socket.id);
+
+        newSocket.on("connect", () => {
+            console.log("Socket connected:", newSocket.id);
             toast.success("Real-time connection established!");
         });
-        socket.on("disconnect", (reason) => {
+
+        newSocket.on("disconnect", (reason) => {
             console.log("Socket disconnected:", reason);
-            if (reason === "io server disconnect") {
-                socket.connect();
-            }
             toast.error("Real-time connection lost. Reconnecting...");
+            // Clear socket state on disconnect, rely on checkAuth/login to reconnect
+            set({ socket: null, onlineUsers: [] });
+            // Let the built-in reconnection logic handle reconnection attempts
         });
     },
 
