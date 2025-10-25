@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useUserAuthStore } from "../store/userAuthStore";
 import { Eye, EyeOff, Mail, Lock, User, Loader2, MessageSquare, CheckCircle, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AuthImagePattern from "../components/AuthImagePattern"; // TODO: Consider dynamic image support later
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
-
 const SignUpPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
@@ -15,6 +14,7 @@ const SignUpPage = () => {
         username: "",
         profileImage: null,
     });
+    const navigate = useNavigate();
     const { signUp, isSigningUp } = useUserAuthStore();
     const [focusedField, setFocusedField] = useState(null);
     const [passwordStrength, setPasswordStrength] = useState(0);
@@ -67,7 +67,7 @@ const SignUpPage = () => {
         formDataToSend.append("profileImage", avatarFile);
 
         try {
-            await signUp(formDataToSend); // signUp must use multipart/form-data
+            await signUp(formDataToSend, navigate); // signUp must use multipart/form-data
         } catch (err) {
             console.error("Signup error:", err);
             toast.error("Sign-up failed. Check console for more.");

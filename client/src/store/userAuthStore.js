@@ -46,20 +46,20 @@ export const useUserAuthStore = create((set, get) => ({
         }
     },
 
-    signUp: async (data) => {
+    signUp: async (data, navigate) => {
         set({ isSigningUp: true });
         try {
             const res = await axiosInstance.post("/auth/signup", data);
-            // Don't set user or connect socket - redirect to login
             toast.success("Signed up successfully! Please log in.");
 
-            // Small delay before redirect to show toast
             setTimeout(() => {
-                window.location.href = "/login";
+                if (navigate) {
+                    navigate("/login");
+                }
             }, 500);
         } catch (err) {
             console.error("Signup error:", err);
-            toast.error(err?.response?.data?.message || err?.message || "Signup failed. Please try again.");
+            toast.error(err?.response?.data?.message || "Signup failed");
         } finally {
             set({ isSigningUp: false });
         }
