@@ -38,7 +38,7 @@ export const postSignUp = ErrorWrapper(async (req, res, next) => {
     }
 
     // *** MODIFIED: Check if req.file exists ***
-    if (!req.file || !req.file.path) {
+    if (!req.file || !req.file.buffer) {
         throw new ErrorHandler(400, "Profile image is required for signup.");
     }
 
@@ -199,7 +199,7 @@ export const putUpdateProfile = ErrorWrapper(async (req, res, next) => {
         }
     }
 
-    if (req.file && req.file.path) {
+    if (req.file && req.file.buffer) {
         let cloudinaryResponse;
         try {
             cloudinaryResponse = await uploadOnCloudinary(req.file.buffer);
