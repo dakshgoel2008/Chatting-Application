@@ -52,7 +52,12 @@ const allowedOrigins = isProduction ? [prodOrigin] : devOrigins;
 app.use(
     cors({
         origin: function (origin, callback) {
-            if (!origin && !isProduction) return callback(null, true);
+            // Allow requests with no origin (like mobile apps, Postman, server-to-server)
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            // Check if origin is in allowed list
             if (allowedOrigins.indexOf(origin) !== -1) {
                 callback(null, true);
             } else {
