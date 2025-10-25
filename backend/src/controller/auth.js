@@ -106,12 +106,12 @@ export const postLogin = ErrorWrapper(async (req, res, next) => {
         throw new ErrorHandler(404, "User not found after token generation");
     }
 
+    const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         path: "/",
-        // Remove the domain property - let the browser handle it
     };
 
     res.cookie("refreshToken", refreshToken, {
@@ -155,10 +155,11 @@ export const postLogout = ErrorWrapper(async (req, res, next) => {
         }
     }
 
+    const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         path: "/",
     };
 
@@ -266,12 +267,14 @@ export const putUpdatePassword = ErrorWrapper(async (req, res, next) => {
     user.refreshToken = null;
     await user.save();
 
+    const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         path: "/",
     };
+
     res.clearCookie("refreshToken", cookieOptions);
     res.clearCookie("accessToken", cookieOptions);
 
@@ -301,12 +304,14 @@ export const postDeleteAccount = ErrorWrapper(async (req, res, next) => {
     await user.deleteOne(); // Use deleteOne()
 
     // Clear cookies after successful deletion
+    const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         path: "/",
     };
+
     res.clearCookie("refreshToken", cookieOptions);
     res.clearCookie("accessToken", cookieOptions);
 

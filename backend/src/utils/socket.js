@@ -5,7 +5,10 @@ import express from "express";
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = process.env.CORS_ORIGINS ? JSON.parse(process.env.CORS_ORIGINS) : ["http://localhost:5173"];
+const isProduction = process.env.NODE_ENV === "production";
+const devOrigins = process.env.CORS_ORIGINS ? JSON.parse(process.env.CORS_ORIGINS) : ["http://localhost:5173"];
+const prodOrigin = process.env.PRODUCTION_CLIENT_URL; // Add this to your production env variables
+const allowedOrigins = isProduction ? [prodOrigin] : devOrigins;
 
 const io = new Server(server, {
     cors: {

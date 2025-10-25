@@ -2,11 +2,10 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 // Remove the /api suffix from the environment variable
-const apiUrl =
-    import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === "development" ? "http://localhost:4444" : "");
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
 export const axiosInstance = axios.create({
-    baseURL: `${apiUrl}/api`, // Now it will be correct
+    baseURL: `${apiUrl}/api`,
     withCredentials: true,
 });
 
@@ -36,8 +35,12 @@ axiosInstance.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // If 401 error and we haven't retried yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Don't redirect to login for certain endpoints
+        const publicEndpoints = ["/auth/login", "/auth/signup", "/auth/check"];
+        const isPublicEndpoint = publicEndpoints.some((endpoint) => originalRequest?.url?.includes(endpoint));
+
+        // Only handle 401 for protected routes and avoid infinite loops
+        if (error.response?.status === 401 && !originalRequest._retry && !isPublicEndpoint) {
             originalRequest._retry = true;
 
             // Clear tokens
