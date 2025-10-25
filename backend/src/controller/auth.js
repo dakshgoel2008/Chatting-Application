@@ -44,7 +44,7 @@ export const postSignUp = ErrorWrapper(async (req, res, next) => {
 
     let cloudinaryResponse;
     try {
-        cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+        cloudinaryResponse = await uploadOnCloudinary(req.file.buffer);
         // Check if uploadOnCloudinary returned an error object
         if (!cloudinaryResponse || cloudinaryResponse.error) {
             throw new Error(cloudinaryResponse?.error || "Cloudinary upload failed");
@@ -202,7 +202,7 @@ export const putUpdateProfile = ErrorWrapper(async (req, res, next) => {
     if (req.file && req.file.path) {
         let cloudinaryResponse;
         try {
-            cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+            cloudinaryResponse = await uploadOnCloudinary(req.file.buffer);
             if (!cloudinaryResponse || cloudinaryResponse.error) {
                 throw new Error(cloudinaryResponse?.error || "Cloudinary upload failed during profile update");
             }

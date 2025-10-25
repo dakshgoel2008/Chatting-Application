@@ -9,35 +9,48 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_APISECRET,
 });
 
-const uploadOnCloudinary = async (filePath, resourceType = "auto", options = {}) => {
-    try {
-        if (!filePath) return null;
+const uploadOnCloudinary = (fileInput, options = {}) => {
+    return new Promise((resolve, reject) => {
+        const isBuffer = Buffer.isBuffer(fileInput);
 
-        // Enhanced upload options for different file types
         const uploadOptions = {
-            resource_type: resourceType,
-            // For documents, ensure they're accessible
-            flags: resourceType === "raw" ? "attachment" : undefined,
-            // Preserve original filename for documents
-            use_filename: true,
-            unique_filename: true,
+            resource_type: "auto",
             ...options,
         };
 
-        const response = await cloudinary.uploader.upload(filePath, uploadOptions);
-        console.log("File uploaded successfully", response.url);
+        const handleUpload = (error, result) => {
+            if (error) {
+                console.error("Error uploading file to Cloudinary", error);
+                if (!isBuffer && typeof fileInput === "string" && fs.existsSync(fileInput)) {
+                    try {
+                        fs.unlinkSync(fileInput);
+                    } catch (e) {
+                        console.error("Error deleting local file after failed upload:", e);
+                    }
+                }
+                return reject({ error: error.message });
+            }
+            console.log("File uploaded successfully to Cloudinary:", result.secure_url);
+            if (!isBuffer && typeof fileInput === "string" && fs.existsSync(fileInput)) {
+                try {
+                    fs.unlinkSync(fileInput);
+                } catch (e) {
+                    console.error("Error deleting local file after successful upload:", e);
+                }
+            }
+            resolve(result);
+        };
 
-        // Clean up local file
-        fs.unlinkSync(filePath);
-        return response;
-    } catch (err) {
-        // Clean up local file even on error
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+        if (isBuffer) {
+            const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, handleUpload);
+            streamifier.createReadStream(fileInput).pipe(uploadStream);
+        } else if (typeof fileInput === "string") {
+            cloudinary.uploader.upload(fileInput, uploadOptions, handleUpload);
+        } else {
+            console.error("Invalid input provided to uploadOnCloudinary:", fileInput);
+            reject({ error: "Invalid file input for upload." });
         }
-        console.error("Error uploading file to Cloudinary", err);
-        return { error: err.message };
-    }
+    });
 };
 
 // Helper function to determine resource type based on MIME type

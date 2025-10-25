@@ -66,38 +66,49 @@ export const postSendMessage = ErrorWrapper(async (req, res, next) => {
         let audioUrl = null;
         let fileUrl = null;
 
-        if (req.files?.image) {
+        if (req.files?.image?.[0]?.buffer) {
+            // Check for buffer
             const s = Date.now();
-            imageUrl = await uploadOnCloudinary(req.files.image[0].path); // Upload image
+            const imageResult = await uploadOnCloudinary(req.files.image[0].buffer, { resource_type: "image" }); // Pass buffer
+            imageUrl = imageResult.secure_url; // Assuming result structure
             const e = Date.now() - s;
             console.log(`[METRICS] Image upload time: ${e}ms`);
         }
-        if (req.files?.video) {
+        if (req.files?.video?.[0]?.buffer) {
+            // Check for buffer
             const s = Date.now();
-            videoUrl = await uploadOnCloudinary(req.files.video[0].path); // Upload video
+            const videoResult = await uploadOnCloudinary(req.files.video[0].buffer, { resource_type: "video" }); // Pass buffer
+            videoUrl = videoResult.secure_url;
             const e = Date.now() - s;
             console.log(`[METRICS] Video upload time: ${e}ms`);
         }
-        if (req.files?.audio) {
+        if (req.files?.audio?.[0]?.buffer) {
+            // Check for buffer
             const s = Date.now();
-            audioUrl = await uploadOnCloudinary(req.files.audio[0].path); // Upload audio
+            // Cloudinary often treats audio as video resource type
+            const audioResult = await uploadOnCloudinary(req.files.audio[0].buffer, { resource_type: "video" }); // Pass buffer
+            audioUrl = audioResult.secure_url;
             const e = Date.now() - s;
             console.log(`[METRICS] Audio upload time: ${e}ms`);
         }
-        if (req.files?.file) {
+        if (req.files?.file?.[0]?.buffer) {
+            // Check for buffer
             const s = Date.now();
-            fileUrl = await uploadOnCloudinary(req.files.file[0].path); // Upload general file
+            // Explicitly set resource_type to 'raw' for generic files
+            const fileResult = await uploadOnCloudinary(req.files.file[0].buffer, { resource_type: "raw" }); // Pass buffer
+            fileUrl = fileResult.secure_url;
             const e = Date.now() - s;
             console.log(`[METRICS] File upload time: ${e}ms`);
         }
+
         const message = await Message.create({
             senderId,
             receiverId,
             text,
-            image: imageUrl ? imageUrl.url : null,
-            video: videoUrl ? videoUrl.url : null,
-            audio: audioUrl ? audioUrl.url : null,
-            file: fileUrl ? fileUrl.url : null,
+            image: imageUrl,
+            video: videoUrl,
+            audio: audioUrl,
+            file: fileUrl,
         });
 
         const receiverSocketId = getReceiverSocketId(receiverId);
