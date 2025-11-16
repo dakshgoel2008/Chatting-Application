@@ -23,4 +23,4 @@ Please follow the `setupGuide.md` file for setting up this to your local machine
 ### Current performance stats (~approx):
 
 -   Working to improve the performance and user experience
-    ![Current Performace Window]({Performance.png})
+    ![Current Performace Window](Performance.png)
