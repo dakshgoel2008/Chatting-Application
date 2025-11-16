@@ -19,3 +19,8 @@ A MERN based real time chatting web application with clean and responsive UI and
 -   Stay tuned more updates coming soon🫡🫡🫡.
 
 Please follow the `setupGuide.md` file for setting up this to your local machine.
+
+### Current performance stats (~approx):
+
+-   Working to improve the performance and user experience
+    ![Current Performace Window]({Performance.png})
